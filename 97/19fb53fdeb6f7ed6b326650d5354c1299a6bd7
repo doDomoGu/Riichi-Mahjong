@@ -1,0 +1,121 @@
+wind/client/src/main.js
+  s_924b67864cb9b9::t_32788ca4f83c5c 1-5
+score-practice/index.html
+  s_924b67864cb9b9::t_2bc0d8f24db4f3 1-25
+wind/client/src/components/Toast.vue
+  s_924b67864cb9b9::t_32788ca4f83c5c 1-7
+wind/deploy/remote-setup.sh
+  s_924b67864cb9b9::t_32788ca4f83c5c 1-52
+wind/deploy.sh
+  s_924b67864cb9b9::t_32788ca4f83c5c 1-89
+README.md
+  s_924b67864cb9b9::t_688b994a859083 30-37
+  s_924b67864cb9b9::t_64b2992f2c9d8c 28
+  s_924b67864cb9b9::t_09ebd2c8bca76b 1-2,4,6,10
+  s_924b67864cb9b9::t_30ae410a513f2f 3,8-9,11-27,29,44,51
+  s_924b67864cb9b9::t_03f814647797ff 5,7,38-43,45-50,52-54
+server/index.js
+  s_924b67864cb9b9::t_26e762ce0fe9ad 7
+  s_924b67864cb9b9::t_ce549bf5e3d9fd 1-6,8-93
+wind/scripts/ensure-build.js
+  s_924b67864cb9b9::t_32788ca4f83c5c 1-16
+wind/start.sh
+  s_924b67864cb9b9::t_32788ca4f83c5c 1-17
+wind/deploy/nginx-mahjong.conf
+  s_924b67864cb9b9::t_32788ca4f83c5c 1-15
+wind/deploy/scp-pass.exp
+  s_924b67864cb9b9::t_32788ca4f83c5c 1-26
+wind/client/vite.config.js
+  s_924b67864cb9b9::t_32788ca4f83c5c 1-28
+wind/.gitignore
+  s_924b67864cb9b9::t_32788ca4f83c5c 1-8
+wind/client/src/state.js
+  s_924b67864cb9b9::t_32788ca4f83c5c 1-436
+wind/client/.env.example
+  s_924b67864cb9b9::t_9aec2d611de734 2-3,6,9
+  s_924b67864cb9b9::t_32788ca4f83c5c 1,4-5,7-8
+wind/client/src/views/WaitingView.vue
+  s_924b67864cb9b9::t_32788ca4f83c5c 1-48
+wind/deploy/mahjong-wind.service
+  s_924b67864cb9b9::t_32788ca4f83c5c 1-16
+wind/server/store.js
+  s_924b67864cb9b9::t_32788ca4f83c5c 1-138
+score-practice/style.css
+  s_924b67864cb9b9::t_45b1217a02cf68 1-105
+wind/client/src/views/LobbyView.vue
+  s_924b67864cb9b9::t_32788ca4f83c5c 1-97
+wind/package.json
+  s_924b67864cb9b9::t_32788ca4f83c5c 1-29
+wind/client/src/components/Avatar.vue
+  s_924b67864cb9b9::t_32788ca4f83c5c 1-10
+wind/client/src/components/RoomCodePad.vue
+  s_924b67864cb9b9::t_32788ca4f83c5c 1-41
+wind/client/index.html
+  s_924b67864cb9b9::t_32788ca4f83c5c 1-18
+wind/client/src/views/HistoryView.vue
+  s_924b67864cb9b9::t_32788ca4f83c5c 1-48
+wind/client/src/views/TableView.vue
+  s_924b67864cb9b9::t_32788ca4f83c5c 1-253
+wind/client/src/components/SettleWizard.vue
+  s_924b67864cb9b9::t_32788ca4f83c5c 1-76
+wind/README.md
+  s_924b67864cb9b9::t_32788ca4f83c5c 1-59,61,63-70
+  s_924b67864cb9b9::t_a11a81f0409485 60,62
+  s_924b67864cb9b9::t_4b2817940daad9 71
+home.css
+  s_924b67864cb9b9::t_083510b5051191 1-182
+wind/client/src/rules.js
+  s_924b67864cb9b9::t_32788ca4f83c5c 1-92
+deploy/mahjong-gateway.service
+  s_924b67864cb9b9::t_a3e30653c37691 1-17
+deploy/hanabi-domain.conf
+  s_924b67864cb9b9::t_43583bd620d42d 1-49
+wind/server/gameLogic.js
+  s_924b67864cb9b9::t_32788ca4f83c5c 1-539
+wind/client/src/api.js
+  s_924b67864cb9b9::t_32788ca4f83c5c 1-87
+index.html
+  s_924b67864cb9b9::t_92393e5387ed49 1-41
+wind/client/src/components/ConfirmDialog.vue
+  s_924b67864cb9b9::t_32788ca4f83c5c 1-16
+deploy/mahjong-wind.service
+  s_924b67864cb9b9::t_4f79bf409ceeb7 1-16
+wind/client/src/style.css
+  s_924b67864cb9b9::t_32788ca4f83c5c 1-694
+wind/client/.env.production
+  s_924b67864cb9b9::t_586b342d11e8ed 1-3
+wind/client/src/App.vue
+  s_924b67864cb9b9::t_32788ca4f83c5c 1-35
+wind/client/src/components/ScorePad.vue
+  s_924b67864cb9b9::t_32788ca4f83c5c 1-70
+wind/server/index.js
+  s_924b67864cb9b9::t_32788ca4f83c5c 1-211
+wind/client/src/views/AuthView.vue
+  s_924b67864cb9b9::t_32788ca4f83c5c 1-81
+wind/server/rooms.js
+  s_924b67864cb9b9::t_32788ca4f83c5c 1-313
+package.json
+  s_924b67864cb9b9::t_dc655cb24bcb7d 1-16
+.gitignore
+  s_924b67864cb9b9::t_c93807bfd5b1a0 1-3
+wind/server/auth.js
+  s_924b67864cb9b9::t_32788ca4f83c5c 1-125
+wind/deploy/ssh-pass.exp
+  s_924b67864cb9b9::t_32788ca4f83c5c 1-25
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.44-trip",
+  "base_commit_sha": "9719fb53fdeb6f7ed6b326650d5354c1299a6bd7",
+  "prompts": {},
+  "sessions": {
+    "s_924b67864cb9b9": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "fd49ff71-2ce1-4e7a-a17d-f77b0fb68b89",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "gulingjun <gulingjun@trip.com>"
+    }
+  }
+}
