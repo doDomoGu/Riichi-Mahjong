@@ -1,0 +1,16 @@
+{
+  "name": "riichi-mahjong",
+  "version": "1.0.0",
+  "private": true,
+  "description": "立直麻将工具集的统一入口",
+  "scripts": {
+    "start": "node server/index.js",
+    "gateway": "node server/index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "http-proxy": "^1.18.1"
+  }
+}
