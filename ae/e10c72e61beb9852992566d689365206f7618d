@@ -1,0 +1,49 @@
+wind/README.md
+  s_924b67864cb9b9::t_623c4351e5e812 62
+score-practice/index.html
+  s_924b67864cb9b9::t_47f822b61bbcd6 84,88,91-92
+  s_924b67864cb9b9::t_edfe8260158fea 12-42,56-83,85-87,89-90,93-102,121-165,176
+  s_924b67864cb9b9::t_5d975249ab764c 43-55,168-175
+  s_924b67864cb9b9::t_9fa8179f31fa9e 103-120
+score-practice/app.js
+  s_924b67864cb9b9::t_6e31bee1837b60 1-9,11-19,21-49,51-59,61-69,71-79,81-187,193-202,206-210,212,214-215,217,219-238,307-310,319-324,327-331,337-347,358-384
+  s_924b67864cb9b9::t_499b504992c3df 203-205,313-318
+  s_924b67864cb9b9::t_914dd58246a628 311-312,325-326
+  s_924b67864cb9b9::t_b53bdf33c6a274 10,20,50,60,70,80,188-192,332-336
+  s_924b67864cb9b9::t_8cb4696575e7ff 211,213,216,218
+  s_924b67864cb9b9::t_228e37a90378d6 239-306,348-357
+score-practice/style.css
+  s_924b67864cb9b9::t_11433d662d9d67 372-382
+  s_924b67864cb9b9::t_9a0cae19cdb1da 14-17
+  s_924b67864cb9b9::t_7308cde50c672f 511-623
+  s_924b67864cb9b9::t_3efefc342cc1e1 638-646,673-676,679-680
+  s_924b67864cb9b9::t_7c015768727861 23-24,28-36,38,40-48,52,54,67,69,74-79,81,89-94,96,98-128,130-148,152-161,190-354,359-371,383-508,624,626-637,647-672
+  s_924b67864cb9b9::t_87c07b0b64ba67 129,162-189
+server/index.js
+  s_924b67864cb9b9::t_ffaa07f3f7dd6e 67
+README.md
+  s_924b67864cb9b9::t_8b4a575a2f4559 45-50
+  s_924b67864cb9b9::t_df513499d492fa 32-34,36
+  s_924b67864cb9b9::t_4cf567458446a6 9,51,53-54
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.44-trip",
+  "base_commit_sha": "aee10c72e61beb9852992566d689365206f7618d",
+  "prompts": {},
+  "humans": {
+    "h_fa183bc1ee823a": {
+      "author": "gulingjun <gulingjun@trip.com>"
+    }
+  },
+  "sessions": {
+    "s_924b67864cb9b9": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "fd49ff71-2ce1-4e7a-a17d-f77b0fb68b89",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "gulingjun <gulingjun@trip.com>"
+    }
+  }
+}
