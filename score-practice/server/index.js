@@ -1,7 +1,6 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const handleQuestionsRequest = require('./questions');
 const listenWithFallback = require('../../scripts/listen-with-fallback');
 
 const PORT = Number(process.env.PORT) || 3002;
@@ -31,8 +30,6 @@ function sendFile(res, relativePath, contentType) {
 
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
-  if (handleQuestionsRequest(req, res, url.pathname)) return;
-
   const file = staticFiles[url.pathname];
   if (req.method === 'GET' && file) {
     sendFile(res, file[0], file[1]);

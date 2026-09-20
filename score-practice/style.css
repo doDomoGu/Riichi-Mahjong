@@ -280,7 +280,7 @@ h2 {
 }
 
 .tile-group,
-.tile-list span {
+.tile-list > span {
   padding: 9px 12px;
   border: 1px solid rgba(49, 89, 72, 0.18);
   border-radius: 8px;
@@ -289,6 +289,10 @@ h2 {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 15px;
   font-weight: 700;
+}
+
+.red-tile {
+  color: #c5463d;
 }
 
 .tile-separator {
@@ -307,20 +311,19 @@ h2 {
 }
 
 .win-info .tile-group {
-  display: block;
+  display: inline-block;
   margin-top: 12px;
 }
 
 .hand-status {
-  margin-top: 18px;
+  margin-top: 14px;
   display: flex;
-  gap: 28px;
+  gap: 10px 16px;
   flex-wrap: wrap;
 }
 
 .hand-status div {
   display: flex;
-  gap: 8px;
   align-items: center;
 }
 
@@ -333,7 +336,7 @@ h2 {
 
 .hand-status strong {
   color: #315948;
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .tile-notation {
@@ -510,8 +513,11 @@ h2 {
   font-size: 20px;
 }
 
-.metric-wide {
-  grid-column: 1 / -1;
+.metric-with-details .metric-detail-label {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(70, 61, 47, 0.1);
+  font-size: 11px;
 }
 
 .metric ul {
@@ -566,6 +572,24 @@ h2 {
   color: #514c44;
   font-size: 14px;
   font-weight: 700;
+}
+
+.answer-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.answer-tools {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.answer-title-row .answer-title {
+  margin-bottom: 10px;
 }
 
 .payment-title {
@@ -749,6 +773,18 @@ h2 {
   font-size: 28px;
 }
 
+.yaku-dialog-card {
+  width: min(100%, 760px);
+}
+
+.yaku-dialog-card .yaku-tool-heading h2 {
+  margin: 0;
+}
+
+.yaku-dialog-card .yaku-options {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .dialog-content {
   color: #514c44;
   font-size: 14px;
@@ -774,20 +810,6 @@ h2 {
   font: 12px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-}
-
-.question-id-line {
-  margin: 12px 0;
-  color: #6f5a39;
-  font-size: 13px;
-}
-
-.question-id-line code {
-  padding: 3px 6px;
-  border-radius: 5px;
-  color: #315948;
-  background: #e4f0e6;
-  word-break: break-all;
 }
 
 .dialog-content h3 {
@@ -938,10 +960,6 @@ h2 {
   .answer-fields,
   .dora-section {
     grid-template-columns: 1fr;
-  }
-
-  .metric-wide {
-    grid-column: auto;
   }
 
   .dora-section > div:last-child {

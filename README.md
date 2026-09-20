@@ -65,8 +65,7 @@ npm start -- wind score-practice
     ├── index.html
     ├── style.css
     ├── app.js
-    ├── server/              # 点数计算业务服务和题目保存接口
-    └── question-history/    # 本地题目历史（内容被 Git 忽略）
+    └── server/              # 点数计算静态服务
 ```
 
 各功能模块在业务上相互独立，拥有自己的页面、依赖和运行方式。总网关只负责统一访问地址和模块路由转发；首页、`wind`、`score-practice` 均由自己的服务提供。后续增加工具时，建议新增一个独立目录，在网关增加模块转发，并在根目录导航页增加入口。

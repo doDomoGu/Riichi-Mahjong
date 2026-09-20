@@ -55,9 +55,6 @@
             <p class="eyebrow">QUESTION</p>
             <h2 id="question-title">本局应该收取多少点数？</h2>
           </div>
-          <button id="show-raw-data" class="button button-secondary raw-data-button" type="button">
-            查看原始数据
-          </button>
         </div>
 
         <div class="hand-section">
@@ -84,11 +81,11 @@
             </div>
           </div>
           <div class="hand-status">
-            <div><span>和牌者</span><strong id="winner-status"></strong></div>
-            <div><span>和牌方式</span><strong id="win-method-status"></strong></div>
-            <div><span>立直状态</span><strong id="riichi-status"></strong></div>
-            <div><span>一发</span><strong id="ippatsu-status"></strong></div>
-            <div><span>门清/副露</span><strong id="meld-status"></strong></div>
+            <div id="winner-status-item"><strong id="winner-status"></strong></div>
+            <div id="win-method-status-item"><strong id="win-method-status"></strong></div>
+            <div id="riichi-status-item"><strong id="riichi-status"></strong></div>
+            <div id="ippatsu-status-item" hidden><strong id="ippatsu-status">一发</strong></div>
+            <div id="meld-status-item"><strong id="meld-status"></strong></div>
           </div>
         </div>
 
@@ -101,39 +98,23 @@
             <span class="section-label">里宝牌指示牌</span>
             <div id="ura-dora-indicators" class="tile-list"></div>
           </div>
-          <div>
-            <span class="section-label">赤宝牌</span>
-            <strong id="red-dora-value" class="dora-value"></strong>
-          </div>
           <div class="table-status">
             <div><span>本场</span><strong id="honba-value"></strong></div>
           </div>
         </div>
 
-        <section class="yaku-tool" aria-labelledby="yaku-tool-title">
-          <div class="yaku-tool-heading">
-            <div>
-              <span class="section-label">辅助工具</span>
-              <h3 id="yaku-tool-title">役种选择</h3>
-            </div>
-            <strong>所选役种：<span id="yaku-total">0</span> 番</strong>
-          </div>
-          <p class="yaku-tool-note">多选役种计算番数，不参与答案校验；宝牌请结合上方指示牌另外计算。</p>
-          <div id="yaku-options" class="yaku-options"></div>
-        </section>
-
         <div class="calculation-grid">
-          <div class="metric">
+          <div class="metric metric-with-details">
             <span>符数</span>
             <strong id="fu-value">待计算</strong>
+            <span id="fu-details-label" class="metric-detail-label">符数构成（提交后查看）</span>
+            <ul id="fu-details" hidden></ul>
           </div>
-          <div class="metric">
+          <div class="metric metric-with-details">
             <span>翻数</span>
             <strong id="han-value">待计算</strong>
-          </div>
-          <div class="metric metric-wide">
-            <span id="fu-details-label">符数构成（提交后查看）</span>
-            <ul id="fu-details" hidden></ul>
+            <span id="han-details-label" class="metric-detail-label">番数构成（提交后查看）</span>
+            <ul id="han-details" hidden></ul>
           </div>
         </div>
 
@@ -141,7 +122,17 @@
 
         <form id="answer-form" class="answer-form">
           <div id="score-answer-fields">
-            <p class="answer-title">先填写这道题的符数和番数</p>
+            <div class="answer-title-row">
+              <p class="answer-title">先填写这道题的符数和番数</p>
+              <div class="answer-tools">
+                <button id="show-yaku-tool" class="button button-secondary" type="button">
+                  役种选择
+                </button>
+                <button id="show-raw-data" class="button button-secondary raw-data-button" type="button">
+                  查看原始数据
+                </button>
+              </div>
+            </div>
             <div class="answer-fields score-fields">
               <div class="answer-field">
                 <label for="fu-answer">符数</label>
@@ -215,15 +206,25 @@
         <div id="dialog-content" class="dialog-content"></div>
       </div>
     </div>
+    <div id="yaku-dialog" class="dialog-backdrop" hidden>
+      <div class="dialog-card yaku-dialog-card" role="dialog" aria-modal="true" aria-labelledby="yaku-dialog-title">
+        <button id="close-yaku-dialog" class="dialog-close" type="button" aria-label="关闭役种选择">×</button>
+        <p class="eyebrow">YAKU TOOL</p>
+        <div class="yaku-tool-heading">
+          <h2 id="yaku-dialog-title">役种选择</h2>
+          <strong>所选役种：<span id="yaku-total">0</span> 番</strong>
+        </div>
+        <p class="dialog-note">多选役种计算番数，不参与答案校验；宝牌请结合指示牌另外计算。</p>
+        <div id="yaku-options" class="yaku-options"></div>
+      </div>
+    </div>
     <div id="raw-dialog" class="dialog-backdrop" hidden>
       <div class="dialog-card raw-dialog-card" role="dialog" aria-modal="true" aria-labelledby="raw-dialog-title">
         <button id="close-raw-dialog" class="dialog-close" type="button" aria-label="关闭原始数据">×</button>
         <p class="eyebrow">DEBUG DATA</p>
         <h2 id="raw-dialog-title">这道题的原始数据</h2>
-        <p class="dialog-note">这道题已按题目 ID 保存在本机浏览器中。复制下面的 JSON 发给我，可以用于检查题目生成和点数答案。</p>
-        <p class="question-id-line">题目 ID：<code id="question-id"></code></p>
+        <p class="dialog-note">复制下面的完整 JSON 发给我，可以用于检查题目生成和点数答案。</p>
         <pre id="raw-data" class="raw-data"></pre>
-        <button id="copy-question-id" class="button button-secondary" type="button">复制题目 ID</button>
         <button id="copy-raw-data" class="button button-primary" type="button">复制原始数据</button>
       </div>
     </div>

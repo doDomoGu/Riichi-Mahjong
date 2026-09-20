@@ -193,16 +193,6 @@ const state = {
   attempted: 0,
 };
 
-function saveQuestionToHistory(question) {
-  fetch('./api/questions', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(question),
-  }).catch(() => {
-    // 本地文件服务不可用时不影响正常出题。
-  });
-}
-
 const doraTilePool = [
   '1m', '4m', '7m', '9m',
   '1p', '4p', '7p', '9p',
@@ -244,7 +234,7 @@ const honorNames = {
 const suitNames = {
   m: '万',
   s: '条',
-  p: '饼',
+  p: '筒',
 };
 
 const $ = (selector) => document.querySelector(selector);
@@ -254,6 +244,19 @@ function formatTile(tile) {
   if (!match) return tile;
   if (match[2] !== 'z') return `${match[1]}${suitNames[match[2]]}`;
   return [...match[1]].map((value) => honorNames[value]).join('');
+}
+
+function formatTileGroup(tile, redState) {
+  const match = tile.match(/^([1-9]+)([mpsz])$/);
+  if (!match) return tile;
+  const [digits, suit] = [match[1], match[2]];
+  const values = [...digits].map((value) => {
+    const isRed = value === '5' && suit !== 'z' && redState.remaining > 0;
+    if (isRed) redState.remaining -= 1;
+    return isRed ? `<span class="red-tile">${value}</span>` : value;
+  }).join('');
+  if (suit === 'z') return [...digits].map((value) => honorNames[value]).join('');
+  return `${values}${suitNames[suit]}`;
 }
 
 function meldTiles(meld) {
@@ -268,18 +271,18 @@ function meldType(meld) {
   return '副露';
 }
 
-function formatMeld(meld) {
+function formatMeld(meld, redState) {
   const tiles = meldTiles(meld);
-  return `${meldType(meld)} ${formatTile(tiles)}`;
+  return `${meldType(meld)} ${formatTileGroup(tiles, redState)}`;
 }
 
-function formatKan(kan) {
+function formatKan(kan, redState) {
   const tiles = meldTiles(kan);
   const match = tiles.match(/^([1-9])\1\1([mpsz])$/);
   const displayTiles = match
     ? `${match[1].repeat(4)}${match[2]}`
     : tiles;
-  return formatTile(displayTiles);
+  return formatTileGroup(displayTiles, redState);
 }
 
 function updateYakuTotal() {
@@ -387,10 +390,6 @@ function randomTiles(count) {
   ));
 }
 
-function createQuestionId() {
-  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-}
-
 function isYakuActuallyPresent(yaku, question) {
   const tileGroups = [...question.groups, question.pair, question.winTile];
   const allTiles = tileGroups.join('');
@@ -432,7 +431,6 @@ function randomQuestion() {
   const question = {
     ...template,
     ...handDetails[template.shape],
-    questionId: createQuestionId(),
     dealer,
     winType,
     honba,
@@ -444,6 +442,8 @@ function randomQuestion() {
     return randomQuestion();
   }
   question.ippatsu = question.riichi && Math.random() < 0.35;
+  question.yaku = question.yaku.filter((item) => item !== '一发');
+  if (question.ippatsu) question.yaku.push('一发');
   question.doraIndicators = randomTiles(1 + question.kanCount);
   question.uraDoraIndicators = question.riichi
     ? randomTiles(question.doraIndicators.length)
@@ -455,8 +455,16 @@ function randomQuestion() {
     .reduce((total, indicator) => total + countTile(tileGroups, nextDoraTile(indicator)), 0)
     + question.redDoraCount;
   question.han = template.baseHan + (question.ippatsu ? 1 : 0) + question.doraCount;
+  if (question.shape === '满贯') {
+    question.fu = 40;
+    question.fuDetails = [
+      '底符 20 符',
+      question.winType === 'ron' ? '门清荣和 10 符' : '自摸 2 符',
+      '役牌雀头 2 符',
+      '中张暗刻 8 符',
+    ];
+  }
   question.answer = calculatePoints(question);
-  saveQuestionToHistory(question);
   return question;
 }
 
@@ -472,21 +480,22 @@ function renderQuestion() {
   const openMelds = new Set(q.openMelds.map(meldTiles));
   const concealedKans = q.concealedKans || [];
   const concealedKanTiles = new Set(concealedKans.map(meldTiles));
+  const redState = { remaining: q.redDoraCount };
   const concealedGroups = q.handGroups
     .filter((group) => !openMelds.has(group) && !concealedKanTiles.has(group));
   $('#hand-label').textContent = '手牌';
   $('#hand-groups').innerHTML = concealedGroups
-    .map((group) => `<span>${formatTile(group)}</span>`).join('');
-  $('#win-tile').textContent = formatTile(q.winTile);
+    .map((group) => `<span>${formatTileGroup(group, redState)}</span>`).join('');
   $('#riichi-status').textContent = q.riichi ? '已立直' : '未立直';
-  $('#ippatsu-status').textContent = q.riichi ? (q.ippatsu ? '成立' : '不成立') : '不适用';
+  $('#ippatsu-status-item').hidden = !q.ippatsu;
   $('#meld-status').textContent = q.openMelds.length ? '有副露' : '门清';
   $('#open-melds').hidden = !q.openMelds.length;
   $('#open-meld-list').innerHTML = q.openMelds
-    .map((meld) => `<span>${formatMeld(meld)}</span>`).join('');
+    .map((meld) => `<span>${formatMeld(meld, redState)}</span>`).join('');
   $('#concealed-kans').hidden = !concealedKans.length;
   $('#concealed-kan-list').innerHTML = concealedKans
-    .map((kan) => `<span>暗杠 ${formatKan(kan)}</span>`).join('');
+    .map((kan) => `<span>暗杠 ${formatKan(kan, redState)}</span>`).join('');
+  $('#win-tile').innerHTML = formatTileGroup(q.winTile, redState);
   $('#dora-label').textContent = `宝牌指示牌（${q.doraIndicators.length} 张${
     q.kanCount ? `，${q.kanCount} 次开杠` : ''
   }）`;
@@ -495,13 +504,13 @@ function renderQuestion() {
   $('#ura-dora-row').hidden = !q.riichi;
   $('#ura-dora-indicators').innerHTML = q.uraDoraIndicators
     .map((indicator) => `<span>${formatTile(indicator)}</span>`).join('');
-  $('#red-dora-value').textContent = q.redDoraCount
-    ? `赤5 × ${q.redDoraCount}`
-    : '无';
   renderYakuOptions(q);
   $('#fu-details').innerHTML = '';
   $('#fu-details').hidden = true;
   $('#fu-details-label').textContent = '符数构成（提交后查看）';
+  $('#han-details').innerHTML = '';
+  $('#han-details').hidden = true;
+  $('#han-details-label').textContent = '番数构成（提交后查看）';
   $('#han-value').textContent = '待计算';
   $('#fu-value').textContent = '待计算';
   $('#honba-value').textContent = state.includeHonba ? `${q.honba} 本场` : '未计本场';
@@ -639,12 +648,20 @@ function closeGuide() {
   $('#guide-dialog').hidden = true;
 }
 
+function openYakuTool() {
+  $('#yaku-dialog').hidden = false;
+  $('#close-yaku-dialog').focus();
+}
+
+function closeYakuTool() {
+  $('#yaku-dialog').hidden = true;
+}
+
 function rawQuestionData() {
   return JSON.stringify(state.question, null, 2);
 }
 
 function openRawData() {
-  $('#question-id').textContent = state.question.questionId;
   $('#raw-data').textContent = rawQuestionData();
   $('#raw-dialog').hidden = false;
   $('#close-raw-dialog').focus();
@@ -672,25 +689,6 @@ async function copyRawData() {
   button.textContent = '已复制';
   window.setTimeout(() => {
     button.textContent = '复制原始数据';
-  }, 1500);
-}
-
-async function copyQuestionId() {
-  const id = state.question.questionId;
-  try {
-    await navigator.clipboard.writeText(id);
-  } catch {
-    const textarea = document.createElement('textarea');
-    textarea.value = id;
-    document.body.appendChild(textarea);
-    textarea.select();
-    document.execCommand('copy');
-    textarea.remove();
-  }
-  const button = $('#copy-question-id');
-  button.textContent = '已复制题目 ID';
-  window.setTimeout(() => {
-    button.textContent = '复制题目 ID';
   }, 1500);
 }
 
@@ -724,6 +722,15 @@ function submitAnswer(event) {
   $('#fu-details').innerHTML = q.fuDetails.map((item) => `<li>${item}</li>`).join('');
   $('#fu-details').hidden = false;
   $('#fu-details-label').textContent = '符数构成';
+  const yakuDetails = q.yaku
+    .filter((item) => !item.startsWith('宝牌') && item !== '赤宝牌')
+    .map((item) => `役种：${item}`);
+  if (q.ippatsu && !q.yaku.includes('一发')) yakuDetails.push('役种：一发');
+  if (q.doraCount) yakuDetails.push(`宝牌合计：${q.doraCount} 番`);
+  yakuDetails.push(`总番数：${q.han} 番`);
+  $('#han-details').innerHTML = yakuDetails.map((item) => `<li>${item}</li>`).join('');
+  $('#han-details').hidden = false;
+  $('#han-details-label').textContent = '番数构成';
   $('#submit-answer').disabled = true;
   $('#feedback').hidden = false;
   $('#feedback').className = isCorrect ? 'feedback feedback-correct' : 'feedback feedback-wrong';
@@ -742,15 +749,20 @@ function setup() {
   $('#guide-dialog').addEventListener('click', (event) => {
     if (event.target === $('#guide-dialog')) closeGuide();
   });
+  $('#show-yaku-tool').addEventListener('click', openYakuTool);
+  $('#close-yaku-dialog').addEventListener('click', closeYakuTool);
+  $('#yaku-dialog').addEventListener('click', (event) => {
+    if (event.target === $('#yaku-dialog')) closeYakuTool();
+  });
   $('#show-raw-data').addEventListener('click', openRawData);
   $('#close-raw-dialog').addEventListener('click', closeRawData);
   $('#raw-dialog').addEventListener('click', (event) => {
     if (event.target === $('#raw-dialog')) closeRawData();
   });
   $('#copy-raw-data').addEventListener('click', copyRawData);
-  $('#copy-question-id').addEventListener('click', copyQuestionId);
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && !$('#guide-dialog').hidden) closeGuide();
+    if (event.key === 'Escape' && !$('#yaku-dialog').hidden) closeYakuTool();
     if (event.key === 'Escape' && !$('#raw-dialog').hidden) closeRawData();
   });
   $('#include-honba').addEventListener('change', (event) => {
