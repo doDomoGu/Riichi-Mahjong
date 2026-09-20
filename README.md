@@ -6,7 +6,7 @@
 
 - `/`：总导航页
 - `/wind/`：风向盘，四人同步看分的立直麻将计分网页
-- `/score-practice/`：点数计算练习，目前为占位页面
+- `/score-practice/`：点数计算练习，支持随机题目、荣和/自摸和桌况加成
 
 ## 本地启动
 
@@ -29,11 +29,11 @@ npm start
 
 ## 线上地址
 
-- <https://dodomogu.com/mahjong/>：总导航页
-- <https://dodomogu.com/mahjong/wind/>：风向盘
-- <https://dodomogu.com/mahjong/score-practice/>：点数计算练习
+- <http://dodomogu.com/mahjong/>：总导航页
+- <http://dodomogu.com/mahjong/wind/>：风向盘
+- <http://dodomogu.com/mahjong/score-practice/>：点数计算练习
 
-旧地址 <https://dodomogu.com/mahjong-wind/> 会跳转到新的风盘地址。
+线上当前使用 HTTP，暂未配置 HTTPS。
 
 ## 目录约定
 
@@ -42,13 +42,16 @@ npm start
 ├── index.html              # 总导航页
 ├── home.css                # 总导航页样式
 ├── server/                 # 仓库级统一访问网关
-├── wind/                   # 独立的风向盘模块（Vue + Node）
-└── score-practice/         # 独立的点数计算练习模块
+├── wind/                   # 风向盘功能模块
+│   ├── client/             # Vue 前端
+│   ├── server/             # Node.js 服务端
+│   ├── data/               # 本地运行数据
+│   ├── deploy/             # 模块部署配置
+│   └── package.json        # 模块依赖和脚本
+└── score-practice/         # 独立的点数计算练习模块（纯静态页面）
     ├── index.html
-    └── style.css
+    ├── style.css
+    └── app.js
 ```
 
 各功能模块在业务上相互独立，拥有自己的页面、依赖和运行方式。总网关只负责统一访问地址和路径转发，不直接引用模块内部业务代码。后续增加工具时，建议新增一个独立目录，在网关增加路径映射，并在根目录导航页增加入口。
-
-风向盘原项目来自
-[`doDomoGu/mahjong-wind`](https://github.com/doDomoGu/mahjong-wind)。

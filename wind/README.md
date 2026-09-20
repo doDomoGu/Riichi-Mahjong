@@ -59,7 +59,7 @@ npm run dev
 
 生产访问路径挂在聚合站点的 `/wind` 目录：
 
-- https://dodomogu.com/wind/
+- http://dodomogu.com/mahjong/wind/
 - 前端 base / API / Socket 见 `client/.env.production`
 
 本机执行（需能 SSH 登录那台机器）：

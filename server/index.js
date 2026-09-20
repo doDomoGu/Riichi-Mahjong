@@ -64,6 +64,7 @@ function handleRequest(req, res) {
     '/score-practice/': ['score-practice/index.html', 'text/html; charset=utf-8'],
     '/score-practice/index.html': ['score-practice/index.html', 'text/html; charset=utf-8'],
     '/score-practice/style.css': ['score-practice/style.css', 'text/css; charset=utf-8'],
+    '/score-practice/app.js': ['score-practice/app.js', 'text/javascript; charset=utf-8'],
   };
   const file = staticFiles[url.pathname];
   if (file) {
