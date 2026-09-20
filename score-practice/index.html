@@ -59,22 +59,55 @@
             <p class="eyebrow">QUESTION</p>
             <h2 id="question-title">本局应该收取多少点数？</h2>
           </div>
-          <div class="badges">
-            <span id="role-badge" class="badge badge-green">子家</span>
-            <span id="win-badge" class="badge">荣和 · 点炮</span>
-          </div>
+          <button id="show-raw-data" class="button button-secondary raw-data-button" type="button">
+            查看原始数据
+          </button>
         </div>
 
         <div class="hand-section">
-          <div class="section-label">和牌信息 · <span id="shape-label"></span></div>
-          <div class="tile-groups">
-            <div id="groups" class="tile-list"></div>
-            <span class="tile-separator">雀头</span>
-            <span id="pair" class="tile-group"></span>
+          <div class="hand-line">
+            <div class="hand-groups-block">
+              <div id="hand-label" class="section-label">手牌（13 张）</div>
+              <div class="tile-groups">
+                <div id="hand-groups" class="tile-list"></div>
+              </div>
+            </div>
+            <div id="open-melds" class="open-melds" hidden>
+              <span class="section-label">副露</span>
+              <div id="open-meld-list" class="tile-list"></div>
+            </div>
           </div>
-          <div class="yaku-row">
-            <span class="section-label">役种</span>
-            <div id="yaku" class="tag-list"></div>
+          <div class="win-info">
+            <div>
+              <span class="section-label">和牌</span>
+              <strong id="win-tile" class="tile-group"></strong>
+            </div>
+            <div>
+              <span class="section-label">听牌形</span>
+              <strong id="wait-type" class="wait-badge"></strong>
+            </div>
+          </div>
+          <div class="hand-status">
+            <div><span>和牌者</span><strong id="winner-status"></strong></div>
+            <div><span>和牌方式</span><strong id="win-method-status"></strong></div>
+            <div><span>立直状态</span><strong id="riichi-status"></strong></div>
+            <div><span>一发</span><strong id="ippatsu-status"></strong></div>
+            <div><span>门清/副露</span><strong id="meld-status"></strong></div>
+          </div>
+        </div>
+
+        <div class="dora-section">
+          <div>
+            <span id="dora-label" class="section-label">宝牌指示牌</span>
+            <div id="dora-indicators" class="tile-list"></div>
+          </div>
+          <div id="ura-dora-row">
+            <span class="section-label">里宝牌指示牌</span>
+            <div id="ura-dora-indicators" class="tile-list"></div>
+          </div>
+          <div>
+            <span class="section-label">赤宝牌</span>
+            <strong id="red-dora-value" class="dora-value"></strong>
           </div>
         </div>
 
@@ -100,44 +133,46 @@
         <p id="question-hint" class="hint"></p>
 
         <form id="answer-form" class="answer-form">
-          <p class="answer-title">先填写这道题的符数和番数</p>
-          <div class="answer-fields score-fields">
-            <div class="answer-field">
-              <label for="fu-answer">符数</label>
-              <div class="input-with-unit">
-                <input id="fu-answer" inputmode="numeric" autocomplete="off" placeholder="例如 30" />
-                <span>符</span>
+          <div id="score-answer-fields">
+            <p class="answer-title">先填写这道题的符数和番数</p>
+            <div class="answer-fields score-fields">
+              <div class="answer-field">
+                <label for="fu-answer">符数</label>
+                <div class="input-with-unit">
+                  <input id="fu-answer" inputmode="numeric" autocomplete="off" placeholder="例如 30" />
+                  <span>符</span>
+                </div>
+              </div>
+              <div class="answer-field">
+                <label for="han-answer">番数</label>
+                <div class="input-with-unit">
+                  <input id="han-answer" inputmode="numeric" autocomplete="off" placeholder="例如 2" />
+                  <span>番</span>
+                </div>
               </div>
             </div>
-            <div class="answer-field">
-              <label for="han-answer">番数</label>
+            <p class="answer-title payment-title">再填写实际应支付的点数</p>
+            <div id="ron-input" class="answer-field">
+              <label for="ron-answer">点炮者应支付</label>
               <div class="input-with-unit">
-                <input id="han-answer" inputmode="numeric" autocomplete="off" placeholder="例如 2" />
-                <span>番</span>
-              </div>
-            </div>
-          </div>
-          <p class="answer-title payment-title">再填写实际应支付的点数</p>
-          <div id="ron-input" class="answer-field">
-            <label for="ron-answer">点炮者应支付</label>
-            <div class="input-with-unit">
-              <input id="ron-answer" inputmode="numeric" autocomplete="off" placeholder="例如 7700" />
-              <span>点</span>
-            </div>
-          </div>
-          <div id="tsumo-inputs" class="answer-fields">
-            <div class="answer-field">
-              <label for="child-answer">子家各支付</label>
-              <div class="input-with-unit">
-                <input id="child-answer" inputmode="numeric" autocomplete="off" placeholder="例如 1300" />
+                <input id="ron-answer" inputmode="numeric" autocomplete="off" placeholder="例如 7700" />
                 <span>点</span>
               </div>
             </div>
-            <div class="answer-field">
-              <label for="dealer-answer">庄家支付</label>
-              <div class="input-with-unit">
-                <input id="dealer-answer" inputmode="numeric" autocomplete="off" placeholder="例如 2600" />
-                <span>点</span>
+            <div id="tsumo-inputs" class="answer-fields">
+              <div class="answer-field">
+                <label for="child-answer">子家各支付</label>
+                <div class="input-with-unit">
+                  <input id="child-answer" inputmode="numeric" autocomplete="off" placeholder="例如 1300" />
+                  <span>点</span>
+                </div>
+              </div>
+              <div class="answer-field">
+                <label for="dealer-answer">庄家支付</label>
+                <div class="input-with-unit">
+                  <input id="dealer-answer" inputmode="numeric" autocomplete="off" placeholder="例如 2600" />
+                  <span>点</span>
+                </div>
               </div>
             </div>
           </div>
@@ -171,6 +206,16 @@
         <p id="dialog-eyebrow" class="eyebrow"></p>
         <h2 id="dialog-title"></h2>
         <div id="dialog-content" class="dialog-content"></div>
+      </div>
+    </div>
+    <div id="raw-dialog" class="dialog-backdrop" hidden>
+      <div class="dialog-card raw-dialog-card" role="dialog" aria-modal="true" aria-labelledby="raw-dialog-title">
+        <button id="close-raw-dialog" class="dialog-close" type="button" aria-label="关闭原始数据">×</button>
+        <p class="eyebrow">DEBUG DATA</p>
+        <h2 id="raw-dialog-title">这道题的原始数据</h2>
+        <p class="dialog-note">复制下面的 JSON 发给我，可以用于检查题目生成和点数答案。</p>
+        <pre id="raw-data" class="raw-data"></pre>
+        <button id="copy-raw-data" class="button button-primary" type="button">复制原始数据</button>
       </div>
     </div>
     <script src="./app.js"></script>

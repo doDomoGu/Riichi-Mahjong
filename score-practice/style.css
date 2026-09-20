@@ -220,6 +220,10 @@ h2 {
   margin-bottom: 0;
 }
 
+.raw-data-button {
+  flex: 0 0 auto;
+}
+
 .badges,
 .tag-list,
 .tile-list {
@@ -264,6 +268,17 @@ h2 {
   flex-wrap: wrap;
 }
 
+.hand-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 22px;
+}
+
+.hand-groups-block {
+  min-width: 0;
+  flex: 1;
+}
+
 .tile-group,
 .tile-list span {
   padding: 9px 12px;
@@ -279,6 +294,85 @@ h2 {
 .tile-separator {
   color: #a09a8e;
   font-size: 12px;
+}
+
+.win-info {
+  margin-top: 18px;
+  display: flex;
+  gap: 28px;
+  flex-wrap: wrap;
+}
+
+.win-info div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.wait-badge {
+  padding: 7px 10px;
+  border-radius: 8px;
+  color: #6f5a39;
+  background: #f1e5d2;
+  font-size: 13px;
+}
+
+.hand-status {
+  margin-top: 18px;
+  display: flex;
+  gap: 28px;
+  flex-wrap: wrap;
+}
+
+.hand-status div {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.hand-status span,
+.open-melds > .section-label {
+  color: #7b7469;
+  font-size: 12px;
+}
+
+.hand-status strong {
+  color: #315948;
+  font-size: 13px;
+}
+
+.open-melds {
+  padding-top: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.dora-section {
+  margin-top: 18px;
+  padding: 16px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  border-radius: 12px;
+  background: #fffaf1;
+}
+
+.dora-section > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.dora-section > div:last-child {
+  grid-column: 1 / -1;
+}
+
+.dora-value {
+  color: #9b6a2b;
+  font-size: 13px;
 }
 
 .yaku-row {
@@ -567,6 +661,29 @@ h2 {
   margin-bottom: 14px;
 }
 
+.raw-dialog-card {
+  width: min(100%, 760px);
+}
+
+.raw-data {
+  max-height: 52vh;
+  overflow: auto;
+  margin: 16px 0;
+  padding: 14px;
+  border-radius: 10px;
+  color: #dce9df;
+  background: #25352d;
+  font: 12px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.dialog-content h3 {
+  margin: 20px 0 8px;
+  color: #315948;
+  font-size: 16px;
+}
+
 .dialog-content ul,
 .dialog-content ol {
   margin: 0 0 16px;
@@ -582,6 +699,31 @@ h2 {
   border-radius: 10px;
   color: #6f5a39;
   background: #f7efe2;
+}
+
+.fu-table {
+  width: 100%;
+  margin: 12px 0 18px;
+  border-collapse: collapse;
+  font-size: 13px;
+  text-align: center;
+}
+
+.fu-table th,
+.fu-table td {
+  padding: 9px 6px;
+  border: 1px solid rgba(70, 61, 47, 0.13);
+}
+
+.fu-table thead th {
+  color: #6f5a39;
+  background: #f7efe2;
+  font-weight: 700;
+}
+
+.fu-table tbody th {
+  color: #315948;
+  background: #e4f0e6;
 }
 
 .limit-list {
@@ -644,6 +786,16 @@ h2 {
     margin-top: 16px;
     justify-content: flex-start;
   }
+
+  .hand-line {
+    display: block;
+  }
+
+  .open-melds {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(70, 61, 47, 0.1);
+  }
 }
 
 @media (max-width: 480px) {
@@ -656,11 +808,16 @@ h2 {
   }
 
   .calculation-grid,
-  .answer-fields {
+  .answer-fields,
+  .dora-section {
     grid-template-columns: 1fr;
   }
 
   .metric-wide {
+    grid-column: auto;
+  }
+
+  .dora-section > div:last-child {
     grid-column: auto;
   }
 
@@ -678,5 +835,14 @@ h2 {
 
   .yaku-table div {
     grid-template-columns: 62px 1fr;
+  }
+
+  .fu-table {
+    font-size: 11px;
+  }
+
+  .fu-table th,
+  .fu-table td {
+    padding: 8px 3px;
   }
 }
