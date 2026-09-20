@@ -1,3 +1,5 @@
 node_modules/
 .DS_Store
 *.log
+score-practice/question-history/*
+!score-practice/question-history/.gitkeep

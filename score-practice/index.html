@@ -32,10 +32,6 @@
             <input id="include-honba" type="checkbox" checked />
             <span>加入本场棒</span>
           </label>
-          <label class="switch-label">
-            <input id="include-riichi" type="checkbox" checked />
-            <span>加入供托立直棒</span>
-          </label>
           <button id="new-question" class="button button-secondary" type="button">换一道题</button>
         </div>
       </section>
@@ -67,7 +63,7 @@
         <div class="hand-section">
           <div class="hand-line">
             <div class="hand-groups-block">
-              <div id="hand-label" class="section-label">手牌（13 张）</div>
+              <div id="hand-label" class="section-label">手牌</div>
               <div class="tile-groups">
                 <div id="hand-groups" class="tile-list"></div>
               </div>
@@ -76,15 +72,15 @@
               <span class="section-label">副露</span>
               <div id="open-meld-list" class="tile-list"></div>
             </div>
-          </div>
-          <div class="win-info">
-            <div>
-              <span class="section-label">和牌</span>
-              <strong id="win-tile" class="tile-group"></strong>
+            <div id="concealed-kans" class="concealed-kans" hidden>
+              <span class="section-label">暗杠</span>
+              <div id="concealed-kan-list" class="tile-list"></div>
             </div>
-            <div>
-              <span class="section-label">听牌形</span>
-              <strong id="wait-type" class="wait-badge"></strong>
+            <div class="win-info">
+              <div>
+                <span class="section-label">和牌</span>
+                <strong id="win-tile" class="tile-group"></strong>
+              </div>
             </div>
           </div>
           <div class="hand-status">
@@ -109,7 +105,22 @@
             <span class="section-label">赤宝牌</span>
             <strong id="red-dora-value" class="dora-value"></strong>
           </div>
+          <div class="table-status">
+            <div><span>本场</span><strong id="honba-value"></strong></div>
+          </div>
         </div>
+
+        <section class="yaku-tool" aria-labelledby="yaku-tool-title">
+          <div class="yaku-tool-heading">
+            <div>
+              <span class="section-label">辅助工具</span>
+              <h3 id="yaku-tool-title">役种选择</h3>
+            </div>
+            <strong>所选役种：<span id="yaku-total">0</span> 番</strong>
+          </div>
+          <p class="yaku-tool-note">多选役种计算番数，不参与答案校验；宝牌请结合上方指示牌另外计算。</p>
+          <div id="yaku-options" class="yaku-options"></div>
+        </section>
 
         <div class="calculation-grid">
           <div class="metric">
@@ -126,10 +137,6 @@
           </div>
         </div>
 
-        <div class="table-status">
-          <div><span>本场</span><strong id="honba-value"></strong></div>
-          <div><span>供托</span><strong id="riichi-value"></strong></div>
-        </div>
         <p id="question-hint" class="hint"></p>
 
         <form id="answer-form" class="answer-form">
@@ -196,7 +203,7 @@
           <li>先确认符数、翻数和是否达到满贯以上。</li>
           <li>基本点为「符数 × 2<sup>（翻数 + 2）</sup>」，再按上限封顶。</li>
           <li>荣和乘以庄家 6 或子家 4；自摸时庄家付基本点×2，子家付基本点。</li>
-          <li>每笔点数向上取整到百位，最后再加本场棒；供托是额外获得的点数。</li>
+          <li>每笔点数向上取整到百位，最后再加本场棒。</li>
         </ol>
       </section>
     </main>
@@ -213,8 +220,10 @@
         <button id="close-raw-dialog" class="dialog-close" type="button" aria-label="关闭原始数据">×</button>
         <p class="eyebrow">DEBUG DATA</p>
         <h2 id="raw-dialog-title">这道题的原始数据</h2>
-        <p class="dialog-note">复制下面的 JSON 发给我，可以用于检查题目生成和点数答案。</p>
+        <p class="dialog-note">这道题已按题目 ID 保存在本机浏览器中。复制下面的 JSON 发给我，可以用于检查题目生成和点数答案。</p>
+        <p class="question-id-line">题目 ID：<code id="question-id"></code></p>
         <pre id="raw-data" class="raw-data"></pre>
+        <button id="copy-question-id" class="button button-secondary" type="button">复制题目 ID</button>
         <button id="copy-raw-data" class="button button-primary" type="button">复制原始数据</button>
       </div>
     </div>

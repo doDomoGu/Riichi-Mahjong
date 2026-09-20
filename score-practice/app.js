@@ -23,13 +23,13 @@ const handTemplates = [
   },
   {
     shape: '役牌刻子',
-    groups: ['123m', '789m', '345p', '678s'],
+    groups: ['123m', '789m', '345p', '555z'],
     pair: '22p',
-    yaku: ['立直', '役牌'],
-    han: 2,
-    baseHan: 2,
-    fu: 40,
-    fuDetails: ['底符 20 符', '中张暗刻 8 符', '役牌明刻 4 符', '两面听 8 符'],
+    yaku: ['役牌'],
+    han: 1,
+    baseHan: 1,
+    fu: 30,
+    fuDetails: ['底符 20 符', '役牌明刻 4 符'],
     hint: '先计算基本点，再根据庄家/子家和和牌方式换算。',
   },
   {
@@ -56,13 +56,13 @@ const handTemplates = [
   },
   {
     shape: '高符低翻',
-    groups: ['111m', '999p', '789s', '123z'],
+    groups: ['111m', '999p', '789s', '111z'],
     pair: '55z',
     yaku: ['役牌', '混全带幺九'],
     han: 3,
     baseHan: 3,
     fu: 70,
-    fuDetails: ['底符 20 符', '幺九暗刻 8 符', '幺九明刻 4 符', '字牌刻子 8 符', '雀头/听牌 30 符'],
+    fuDetails: ['底符 20 符', '幺九暗杠 32 符', '字牌暗刻 8 符', '幺九字牌雀头 2 符'],
     hint: '达到满贯后，符数不再改变基本点。',
   },
   {
@@ -131,7 +131,7 @@ const handDetails = {
     winTile: '8s',
     waitType: '两面听',
     riichi: false,
-    openMelds: ['123m'],
+    openMelds: ['555z'],
   },
   '中张暗刻': {
     handGroups: ['111m', '345m', '678p', '23s', '66z'],
@@ -148,11 +148,12 @@ const handDetails = {
     openMelds: [],
   },
   '高符低翻': {
-    handGroups: ['111m', '999p', '78s', '123z', '55z'],
+    handGroups: ['999p', '78s', '111z', '55z'],
     winTile: '9s',
     waitType: '两面听',
     riichi: false,
-    openMelds: ['111m'],
+    openMelds: [],
+    concealedKans: ['111m'],
   },
   '低符高翻': {
     handGroups: ['234m', '456m', '678p', '23s', '55p'],
@@ -186,18 +187,21 @@ const handDetails = {
 
 const state = {
   includeHonba: true,
-  includeRiichi: true,
   question: null,
   answered: false,
   correct: 0,
   attempted: 0,
 };
 
-const riichiStickSources = [
-  '本局其他玩家立直',
-  '上一局流局继承',
-  '之前局累计',
-];
+function saveQuestionToHistory(question) {
+  fetch('./api/questions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(question),
+  }).catch(() => {
+    // 本地文件服务不可用时不影响正常出题。
+  });
+}
 
 const doraTilePool = [
   '1m', '4m', '7m', '9m',
@@ -206,7 +210,112 @@ const doraTilePool = [
   '1z', '2z', '3z', '5z',
 ];
 
+const yakuOptions = [
+  { id: 'riichi', label: '立直', closedHan: 1, requiresRiichi: true, note: '门清限定' },
+  { id: 'ippatsu', label: '一发', closedHan: 1, requiresRiichi: true, note: '门清立直限定' },
+  { id: 'menzen-tsumo', label: '门清自摸', closedHan: 1, closedOnly: true, requiresTsumo: true },
+  { id: 'tanyao', label: '断幺九', closedHan: 1, openHan: 1 },
+  { id: 'pinfu', label: '平和', closedHan: 1, closedOnly: true },
+  { id: 'iipeikou', label: '一盃口', closedHan: 1, closedOnly: true },
+  { id: 'yakuhai', label: '役牌', closedHan: 1, openHan: 1 },
+  { id: 'sanshoku', label: '三色同顺', closedHan: 2, openHan: 1 },
+  { id: 'sanshoku-doukou', label: '三色同刻', closedHan: 2, openHan: 2 },
+  { id: 'ittsu', label: '一气通贯', closedHan: 2, openHan: 1 },
+  { id: 'chiitoitsu', label: '七对子', closedHan: 2, closedOnly: true },
+  { id: 'toitoi', label: '对对和', closedHan: 2, openHan: 2 },
+  { id: 'sanankou', label: '三暗刻', closedHan: 2, openHan: 2 },
+  { id: 'chanta', label: '混全带幺九', closedHan: 2, openHan: 1 },
+  { id: 'honitsu', label: '混一色', closedHan: 3, openHan: 2 },
+  { id: 'junchan', label: '纯全带幺九', closedHan: 3, openHan: 2 },
+  { id: 'ryanpeikou', label: '二杯口', closedHan: 3, closedOnly: true },
+  { id: 'chinitsu', label: '清一色', closedHan: 6, openHan: 5 },
+];
+
+const honorNames = {
+  1: '东',
+  2: '南',
+  3: '西',
+  4: '北',
+  5: '中',
+  6: '白',
+  7: '发',
+};
+
+const suitNames = {
+  m: '万',
+  s: '条',
+  p: '饼',
+};
+
 const $ = (selector) => document.querySelector(selector);
+
+function formatTile(tile) {
+  const match = tile.match(/^([1-9]+)([mpsz])$/);
+  if (!match) return tile;
+  if (match[2] !== 'z') return `${match[1]}${suitNames[match[2]]}`;
+  return [...match[1]].map((value) => honorNames[value]).join('');
+}
+
+function meldTiles(meld) {
+  return typeof meld === 'string' ? meld : meld.tiles;
+}
+
+function meldType(meld) {
+  const tiles = meldTiles(meld);
+  if (/^([1-9])\1\1\1[mpsz]$/.test(tiles)) return '杠';
+  if (/^([1-9])\1\1[mpsz]$/.test(tiles)) return '碰';
+  if (/^[1-9]{3}[mps]$/.test(tiles)) return '吃';
+  return '副露';
+}
+
+function formatMeld(meld) {
+  const tiles = meldTiles(meld);
+  return `${meldType(meld)} ${formatTile(tiles)}`;
+}
+
+function formatKan(kan) {
+  const tiles = meldTiles(kan);
+  const match = tiles.match(/^([1-9])\1\1([mpsz])$/);
+  const displayTiles = match
+    ? `${match[1].repeat(4)}${match[2]}`
+    : tiles;
+  return formatTile(displayTiles);
+}
+
+function updateYakuTotal() {
+  const total = [...document.querySelectorAll('#yaku-options input:checked')]
+    .reduce((sum, input) => sum + Number(input.dataset.han), 0);
+  $('#yaku-total').textContent = total;
+}
+
+function renderYakuOptions(question) {
+  const isOpen = question.openMelds.length > 0;
+  const options = yakuOptions.map((option) => {
+    const unavailable = (option.requiresRiichi && !question.riichi)
+      || (option.requiresTsumo && question.winType !== 'tsumo')
+      || (option.closedOnly && isOpen);
+    const han = isOpen && option.openHan !== undefined ? option.openHan : option.closedHan;
+    const ruleNote = option.closedOnly
+      ? '门清限定'
+      : option.openHan !== undefined && option.openHan !== option.closedHan
+        ? `副露 ${option.openHan} 番`
+        : option.note || '';
+    return `
+      <label class="yaku-option${unavailable ? ' yaku-option-disabled' : ''}">
+        <input type="checkbox" data-han="${han}"${unavailable ? ' disabled' : ''} />
+        <span>
+          <strong>${option.label}</strong>
+          <small>${han} 番${ruleNote ? ` · ${ruleNote}` : ''}</small>
+        </span>
+      </label>
+    `;
+  }).join('');
+  $('#yaku-options').innerHTML = options;
+  $('#yaku-options').querySelectorAll('input').forEach((input) => {
+    input.addEventListener('change', updateYakuTotal);
+  });
+  updateYakuTotal();
+}
 
 function ceil100(value) {
   return Math.ceil(value / 100) * 100;
@@ -247,7 +356,6 @@ function calculatePoints(question) {
     ...payments,
     base,
     limitLabel: limit ? limit.label : `${question.fu}符 ${question.han}翻`,
-    riichiBonus: question.riichiSticks * 1000,
   };
 }
 
@@ -279,14 +387,39 @@ function randomTiles(count) {
   ));
 }
 
+function createQuestionId() {
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function isYakuActuallyPresent(yaku, question) {
+  const tileGroups = [...question.groups, question.pair, question.winTile];
+  const allTiles = tileGroups.join('');
+  if (yaku === '役牌') {
+    return question.groups.some((group) => /^([1-7])\1\1z$/.test(group));
+  }
+  if (yaku === '断幺九') {
+    return !/(1|9|z)/.test(allTiles);
+  }
+  if (yaku === '清一色') {
+    const suits = new Set([...allTiles].filter((tile) => /[mpsz]/.test(tile)));
+    return suits.size === 1 && !suits.has('z');
+  }
+  if (yaku === '混一色') {
+    const suits = new Set([...allTiles].filter((tile) => /[mpsz]/.test(tile)));
+    return suits.size === 2 && suits.has('z');
+  }
+  return true;
+}
+
 function hasWinningYaku(question) {
   const statusYaku = new Set(['立直', '一发', '门清自摸']);
   const structuralYaku = question.yaku.some((yaku) => (
     !statusYaku.has(yaku)
     && !yaku.startsWith('宝牌')
     && yaku !== '赤宝牌'
+    && isYakuActuallyPresent(yaku, question)
   ));
-  const riichiYaku = question.riichi;
+  const riichiYaku = question.riichi && !question.openMelds.length;
   const menzenTsumoYaku = question.winType === 'tsumo' && !question.openMelds.length;
   return riichiYaku || menzenTsumoYaku || structuralYaku;
 }
@@ -299,11 +432,11 @@ function randomQuestion() {
   const question = {
     ...template,
     ...handDetails[template.shape],
+    questionId: createQuestionId(),
     dealer,
     winType,
     honba,
-    riichiSticks: 0,
-    riichiStickSource: '无',
+    concealedKans: handDetails[template.shape].concealedKans || [],
     kanCount: Math.floor(Math.random() * 3),
     ippatsu: false,
   };
@@ -322,15 +455,8 @@ function randomQuestion() {
     .reduce((total, indicator) => total + countTile(tileGroups, nextDoraTile(indicator)), 0)
     + question.redDoraCount;
   question.han = template.baseHan + (question.ippatsu ? 1 : 0) + question.doraCount;
-  question.riichiSticks = state.includeRiichi
-    ? Math.floor(Math.random() * 3)
-    : 0;
-  if (question.riichiSticks) {
-    question.riichiStickSource = riichiStickSources[
-      Math.floor(Math.random() * riichiStickSources.length)
-    ];
-  }
   question.answer = calculatePoints(question);
+  saveQuestionToHistory(question);
   return question;
 }
 
@@ -342,40 +468,43 @@ function renderQuestion() {
   const q = state.question;
   const answer = q.answer;
   $('#winner-status').textContent = q.dealer ? '庄家' : '子家';
-  $('#win-method-status').textContent = q.winType === 'ron' ? '抓铳' : '自摸';
-  const openMelds = new Set(q.openMelds);
-  const concealedGroups = q.handGroups.filter((group) => !openMelds.has(group));
-  $('#hand-label').textContent = q.openMelds.length ? '手牌（不含副露）' : '手牌（13 张）';
-  $('#hand-groups').innerHTML = concealedGroups.map((group) => `<span>${group}</span>`).join('');
-  $('#win-tile').textContent = q.winTile;
-  $('#wait-type').textContent = '待判断';
+  $('#win-method-status').textContent = q.winType === 'ron' ? '捉铳' : '自摸';
+  const openMelds = new Set(q.openMelds.map(meldTiles));
+  const concealedKans = q.concealedKans || [];
+  const concealedKanTiles = new Set(concealedKans.map(meldTiles));
+  const concealedGroups = q.handGroups
+    .filter((group) => !openMelds.has(group) && !concealedKanTiles.has(group));
+  $('#hand-label').textContent = '手牌';
+  $('#hand-groups').innerHTML = concealedGroups
+    .map((group) => `<span>${formatTile(group)}</span>`).join('');
+  $('#win-tile').textContent = formatTile(q.winTile);
   $('#riichi-status').textContent = q.riichi ? '已立直' : '未立直';
   $('#ippatsu-status').textContent = q.riichi ? (q.ippatsu ? '成立' : '不成立') : '不适用';
   $('#meld-status').textContent = q.openMelds.length ? '有副露' : '门清';
   $('#open-melds').hidden = !q.openMelds.length;
-  $('#open-meld-list').innerHTML = q.openMelds.map((meld) => `<span>${meld}</span>`).join('');
+  $('#open-meld-list').innerHTML = q.openMelds
+    .map((meld) => `<span>${formatMeld(meld)}</span>`).join('');
+  $('#concealed-kans').hidden = !concealedKans.length;
+  $('#concealed-kan-list').innerHTML = concealedKans
+    .map((kan) => `<span>暗杠 ${formatKan(kan)}</span>`).join('');
   $('#dora-label').textContent = `宝牌指示牌（${q.doraIndicators.length} 张${
     q.kanCount ? `，${q.kanCount} 次开杠` : ''
   }）`;
   $('#dora-indicators').innerHTML = q.doraIndicators
-    .map((indicator) => `<span>${indicator}</span>`).join('');
+    .map((indicator) => `<span>${formatTile(indicator)}</span>`).join('');
   $('#ura-dora-row').hidden = !q.riichi;
   $('#ura-dora-indicators').innerHTML = q.uraDoraIndicators
-    .map((indicator) => `<span>${indicator}</span>`).join('');
+    .map((indicator) => `<span>${formatTile(indicator)}</span>`).join('');
   $('#red-dora-value').textContent = q.redDoraCount
     ? `赤5 × ${q.redDoraCount}`
     : '无';
+  renderYakuOptions(q);
   $('#fu-details').innerHTML = '';
   $('#fu-details').hidden = true;
   $('#fu-details-label').textContent = '符数构成（提交后查看）';
   $('#han-value').textContent = '待计算';
   $('#fu-value').textContent = '待计算';
   $('#honba-value').textContent = state.includeHonba ? `${q.honba} 本场` : '未计本场';
-  $('#riichi-value').textContent = state.includeRiichi
-    ? q.riichiSticks
-      ? `${q.riichiSticks} 根 · ${q.riichiStickSource}（另收 ${formatPoints(answer.riichiBonus)}）`
-      : '无供托'
-    : '未计供托';
   $('#question-hint').textContent = q.hint;
   $('#feedback').hidden = true;
   $('#answer-form').hidden = false;
@@ -392,12 +521,12 @@ function expectedText(q) {
   const a = q.answer;
   const scoreText = `符数 ${q.fu} 符，${q.han} 翻。`;
   if (q.winType === 'ron') {
-    return `${scoreText}点炮者支付 ${formatPoints(a.ron)}。${a.riichiBonus ? `另外获得桌上的 ${formatPoints(a.riichiBonus)} 供托。` : ''}`;
+    return `${scoreText}点炮者支付 ${formatPoints(a.ron)}。`;
   }
   if (q.dealer) {
-    return `${scoreText}三家子家各支付 ${formatPoints(a.each)}。${a.riichiBonus ? `另外获得 ${formatPoints(a.riichiBonus)} 供托。` : ''}`;
+    return `${scoreText}三家子家各支付 ${formatPoints(a.each)}。`;
   }
-  return `${scoreText}两位子家各支付 ${formatPoints(a.child)}，庄家支付 ${formatPoints(a.dealer)}。${a.riichiBonus ? `另外获得 ${formatPoints(a.riichiBonus)} 供托。` : ''}`;
+  return `${scoreText}两位子家各支付 ${formatPoints(a.child)}，庄家支付 ${formatPoints(a.dealer)}。`;
 }
 
 function explanation(q) {
@@ -458,7 +587,7 @@ const guideContent = {
         <li>先用「符数 × 2<sup>（番数＋2）</sup>」算出基本点。</li>
         <li>达到满贯、跳满、倍满、三倍满或役满时，改用对应的固定基本点。</li>
         <li>每一笔支付都向上取整到百位。</li>
-        <li>本场棒：荣和每本场加 300 点，自摸每位支付者加 100 点；供托立直棒由和牌者额外获得。</li>
+        <li>本场棒：荣和每本场加 300 点，自摸每位支付者加 100 点。</li>
       </ol>
       <h3>荣和（点炮）</h3>
       <ul>
@@ -486,7 +615,7 @@ const guideContent = {
       <p>和牌至少需要一个役。宝牌可以增加番数，但本身不是役，不能单独和牌。</p>
       <div class="yaku-table">
         <div><strong>1 翻</strong><span>立直、一发、门清自摸、断幺九、平和、一盃口、役牌</span></div>
-        <div><strong>2 翻</strong><span>七对子、对对和、三暗刻、三色同顺（门清）、一气通贯（门清）、混全带幺九</span></div>
+        <div><strong>2 翻</strong><span>七对子、对对和、三暗刻、三色同顺、三色同刻、一气通贯、混全带幺九</span></div>
         <div><strong>3 翻</strong><span>混一色、纯全带幺九（二杯口也是 3 翻）</span></div>
         <div><strong>6 翻</strong><span>清一色</span></div>
         <div><strong>役满</strong><span>国士无双、四暗刻、大三元、字一色、清老头等</span></div>
@@ -515,6 +644,7 @@ function rawQuestionData() {
 }
 
 function openRawData() {
+  $('#question-id').textContent = state.question.questionId;
   $('#raw-data').textContent = rawQuestionData();
   $('#raw-dialog').hidden = false;
   $('#close-raw-dialog').focus();
@@ -545,6 +675,25 @@ async function copyRawData() {
   }, 1500);
 }
 
+async function copyQuestionId() {
+  const id = state.question.questionId;
+  try {
+    await navigator.clipboard.writeText(id);
+  } catch {
+    const textarea = document.createElement('textarea');
+    textarea.value = id;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    textarea.remove();
+  }
+  const button = $('#copy-question-id');
+  button.textContent = '已复制题目 ID';
+  window.setTimeout(() => {
+    button.textContent = '复制题目 ID';
+  }, 1500);
+}
+
 function submitAnswer(event) {
   event.preventDefault();
   if (state.answered) return;
@@ -572,7 +721,6 @@ function submitAnswer(event) {
   if (isCorrect) state.correct += 1;
   $('#fu-value').textContent = `${q.fu} 符`;
   $('#han-value').textContent = `${q.han} 翻`;
-  $('#wait-type').textContent = q.waitType;
   $('#fu-details').innerHTML = q.fuDetails.map((item) => `<li>${item}</li>`).join('');
   $('#fu-details').hidden = false;
   $('#fu-details-label').textContent = '符数构成';
@@ -600,17 +748,13 @@ function setup() {
     if (event.target === $('#raw-dialog')) closeRawData();
   });
   $('#copy-raw-data').addEventListener('click', copyRawData);
+  $('#copy-question-id').addEventListener('click', copyQuestionId);
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && !$('#guide-dialog').hidden) closeGuide();
     if (event.key === 'Escape' && !$('#raw-dialog').hidden) closeRawData();
   });
   $('#include-honba').addEventListener('change', (event) => {
     state.includeHonba = event.target.checked;
-    state.question = randomQuestion();
-    renderQuestion();
-  });
-  $('#include-riichi').addEventListener('change', (event) => {
-    state.includeRiichi = event.target.checked;
     state.question = randomQuestion();
     renderQuestion();
   });

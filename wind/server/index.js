@@ -7,6 +7,7 @@ const { Server } = require('socket.io');
 const rooms = require('./rooms');
 const store = require('./store');
 const accounts = require('./auth');
+const listenWithFallback = require('../../scripts/listen-with-fallback');
 
 const app = express();
 const server = http.createServer(app);
@@ -14,7 +15,7 @@ const io = new Server(server, {
   cors: { origin: true, credentials: true },
 });
 
-const PORT = Number(process.env.PORT) || 3000;
+const PORT = Number(process.env.PORT) || 3001;
 const isProd = process.env.NODE_ENV === 'production';
 
 app.use(cors({ origin: true, credentials: true }));
@@ -185,7 +186,13 @@ if (isProd || require('fs').existsSync(path.join(dist, 'index.html'))) {
 
 function lanAddresses() {
   const result = [];
-  const ifaces = os.networkInterfaces();
+  let ifaces;
+  try {
+    ifaces = os.networkInterfaces();
+  } catch (error) {
+    console.warn('无法读取局域网地址，跳过局域网地址展示：', error.message);
+    return result;
+  }
   Object.values(ifaces).forEach((list) => {
     (list || []).forEach((item) => {
       if (item.family === 'IPv4' && !item.internal) {
@@ -196,12 +203,12 @@ function lanAddresses() {
   return result;
 }
 
-server.listen(PORT, '0.0.0.0', () => {
+listenWithFallback(server, PORT, '0.0.0.0', (actualPort) => {
   console.log('');
   console.log('  立直麻将 · 风向盘 已启动');
-  console.log('  本机    http://localhost:' + PORT);
+  console.log('  本机    http://localhost:' + actualPort);
   lanAddresses().forEach((ip) => {
-    console.log('  局域网  http://' + ip + ':' + PORT);
+    console.log('  局域网  http://' + ip + ':' + actualPort);
   });
   console.log('');
   if (!isProd) {

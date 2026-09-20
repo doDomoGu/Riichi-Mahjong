@@ -1,13 +1,13 @@
 [Unit]
-Description=立直麻将 · 风向盘
+Description=立直麻将点数计算服务
 After=network.target
 
 [Service]
 Type=simple
-WorkingDirectory=/opt/riichi-mahjong/wind
+WorkingDirectory=/opt/riichi-mahjong
 Environment=NODE_ENV=production
-Environment=PORT=3001
-ExecStart=/usr/bin/env node server/index.js
+Environment=PORT=3002
+ExecStart=/usr/bin/env node score-practice/server/index.js
 Restart=always
 RestartSec=3
 LimitNOFILE=65535

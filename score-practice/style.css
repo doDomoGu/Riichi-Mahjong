@@ -297,24 +297,18 @@ h2 {
 }
 
 .win-info {
-  margin-top: 18px;
-  display: flex;
-  gap: 28px;
-  flex-wrap: wrap;
+  margin-top: 0;
+  padding-left: 22px;
+  border-left: 1px solid rgba(70, 61, 47, 0.14);
 }
 
-.win-info div {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+.win-info > div {
+  display: block;
 }
 
-.wait-badge {
-  padding: 7px 10px;
-  border-radius: 8px;
-  color: #6f5a39;
-  background: #f1e5d2;
-  font-size: 13px;
+.win-info .tile-group {
+  display: block;
+  margin-top: 12px;
 }
 
 .hand-status {
@@ -331,7 +325,8 @@ h2 {
 }
 
 .hand-status span,
-.open-melds > .section-label {
+.open-melds > .section-label,
+.concealed-kans > .section-label {
   color: #7b7469;
   font-size: 12px;
 }
@@ -341,12 +336,26 @@ h2 {
   font-size: 13px;
 }
 
-.open-melds {
-  padding-top: 0;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
+.tile-notation {
+  margin: 14px 0 0;
+  color: #a09a8e;
+  font-size: 12px;
+}
+
+.open-melds,
+.concealed-kans {
+  padding-left: 22px;
+  border-left: 1px solid rgba(70, 61, 47, 0.14);
+}
+
+.open-melds .tile-list,
+.concealed-kans .tile-list {
+  margin-top: 12px;
+}
+
+.open-melds > .section-label,
+.concealed-kans > .section-label {
+  display: block;
 }
 
 .dora-section {
@@ -370,9 +379,98 @@ h2 {
   grid-column: 1 / -1;
 }
 
+.dora-section > .table-status {
+  display: grid;
+  align-items: stretch;
+}
+
 .dora-value {
   color: #9b6a2b;
   font-size: 13px;
+}
+
+.yaku-tool {
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid rgba(70, 61, 47, 0.1);
+  border-radius: 12px;
+  background: #f7f3eb;
+}
+
+.yaku-tool-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.yaku-tool-heading h3 {
+  margin: 4px 0 0;
+  color: #315948;
+  font-size: 18px;
+}
+
+.yaku-tool-heading > strong {
+  color: #9b6a2b;
+  font-size: 14px;
+}
+
+.yaku-tool-note {
+  margin: 10px 0 14px;
+  color: #7b7469;
+  font-size: 12px;
+}
+
+.yaku-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.yaku-option {
+  min-height: 52px;
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(70, 61, 47, 0.12);
+  border-radius: 9px;
+  background: #fffdf8;
+  cursor: pointer;
+}
+
+.yaku-option:hover {
+  border-color: rgba(49, 89, 72, 0.4);
+}
+
+.yaku-option input {
+  flex: 0 0 auto;
+  accent-color: #315948;
+}
+
+.yaku-option span {
+  min-width: 0;
+}
+
+.yaku-option strong,
+.yaku-option small {
+  display: block;
+}
+
+.yaku-option strong {
+  color: #514c44;
+  font-size: 13px;
+}
+
+.yaku-option small {
+  margin-top: 3px;
+  color: #9b6a2b;
+  font-size: 11px;
+}
+
+.yaku-option-disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 .yaku-row {
@@ -428,7 +526,7 @@ h2 {
   margin-top: 18px;
   padding: 14px 0;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 12px;
   border-top: 1px solid rgba(70, 61, 47, 0.1);
   border-bottom: 1px solid rgba(70, 61, 47, 0.1);
@@ -678,6 +776,20 @@ h2 {
   overflow-wrap: anywhere;
 }
 
+.question-id-line {
+  margin: 12px 0;
+  color: #6f5a39;
+  font-size: 13px;
+}
+
+.question-id-line code {
+  padding: 3px 6px;
+  border-radius: 5px;
+  color: #315948;
+  background: #e4f0e6;
+  word-break: break-all;
+}
+
 .dialog-content h3 {
   margin: 20px 0 8px;
   color: #315948;
@@ -791,10 +903,25 @@ h2 {
     display: block;
   }
 
-  .open-melds {
+  .open-melds,
+  .concealed-kans {
     margin-top: 16px;
     padding-top: 14px;
+    padding-left: 0;
+    border-left: 0;
     border-top: 1px solid rgba(70, 61, 47, 0.1);
+  }
+
+  .win-info {
+    margin-top: 16px;
+    padding-top: 14px;
+    padding-left: 0;
+    border-top: 1px solid rgba(70, 61, 47, 0.1);
+    border-left: 0;
+  }
+
+  .yaku-options {
+    grid-template-columns: 1fr 1fr;
   }
 }
 
@@ -819,6 +946,14 @@ h2 {
 
   .dora-section > div:last-child {
     grid-column: auto;
+  }
+
+  .dora-section > .table-status {
+    grid-column: 1 / -1;
+  }
+
+  .yaku-options {
+    grid-template-columns: 1fr;
   }
 
   .feedback-heading {

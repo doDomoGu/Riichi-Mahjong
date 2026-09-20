@@ -4,8 +4,10 @@
   "private": true,
   "description": "立直麻将工具集的统一入口",
   "scripts": {
-    "start": "node server/index.js",
-    "gateway": "node server/index.js"
+    "start": "node scripts/start.js",
+    "gateway": "node server/index.js",
+    "home": "node home/server/index.js",
+    "score-practice": "node score-practice/server/index.js"
   },
   "engines": {
     "node": ">=18"

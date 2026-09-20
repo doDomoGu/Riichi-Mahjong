@@ -1,13 +1,15 @@
 [Unit]
 Description=立直麻将工具集统一网关
-After=network.target mahjong-wind.service
+After=network.target mahjong-home.service mahjong-wind.service mahjong-score-practice.service
 
 [Service]
 Type=simple
 WorkingDirectory=/opt/riichi-mahjong
 Environment=NODE_ENV=production
-Environment=PORT=8081
-Environment=WIND_TARGET=http://127.0.0.1:3000
+Environment=PORT=8080
+Environment=WIND_TARGET=http://127.0.0.1:3001
+Environment=SCORE_PRACTICE_TARGET=http://127.0.0.1:3002
+Environment=HOME_TARGET=http://127.0.0.1:3000
 ExecStart=/usr/bin/env node server/index.js
 Restart=always
 RestartSec=3

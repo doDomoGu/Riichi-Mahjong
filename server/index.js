@@ -1,15 +1,23 @@
-const fs = require('fs');
 const http = require('http');
-const path = require('path');
 const httpProxy = require('http-proxy');
+const listenWithFallback = require('../scripts/listen-with-fallback');
 
-const ROOT = path.join(__dirname, '..');
-const PORT = Number(process.env.PORT) || 8081;
-const WIND_TARGET = process.env.WIND_TARGET || 'http://127.0.0.1:3000';
+const PORT = Number(process.env.PORT) || 8080;
+const WIND_TARGET = process.env.WIND_TARGET || 'http://127.0.0.1:3001';
+const SCORE_PRACTICE_TARGET = process.env.SCORE_PRACTICE_TARGET || 'http://127.0.0.1:3002';
+const HOME_TARGET = process.env.HOME_TARGET || 'http://127.0.0.1:3000';
 
 const proxy = httpProxy.createProxyServer({
   changeOrigin: true,
   ws: true,
+});
+
+const scorePracticeProxy = httpProxy.createProxyServer({
+  changeOrigin: true,
+});
+
+const homeProxy = httpProxy.createProxyServer({
+  changeOrigin: true,
 });
 
 proxy.on('error', (error, req, res) => {
@@ -22,25 +30,19 @@ proxy.on('error', (error, req, res) => {
   console.error('wind proxy error:', error.message);
 });
 
-function sendFile(res, relativePath, contentType) {
-  const filePath = path.join(ROOT, relativePath);
-  fs.readFile(filePath, (error, content) => {
-    if (error) {
-      res.writeHead(error.code === 'ENOENT' ? 404 : 500);
-      res.end(error.code === 'ENOENT' ? 'Not Found' : 'Internal Server Error');
-      return;
-    }
-    res.writeHead(200, {
-      'Content-Type': contentType,
-      'Cache-Control': 'no-cache',
-    });
-    res.end(content);
-  });
-}
-
 function proxyWind(req, res) {
   req.url = req.url.replace(/^\/wind(?=\/|$)/, '') || '/';
   proxy.web(req, res, { target: WIND_TARGET });
+}
+
+function proxyScorePractice(req, res) {
+  req.url = req.url.replace(/^\/score-practice(?=\/|$)/, '') || '/';
+  scorePracticeProxy.web(req, res, { target: SCORE_PRACTICE_TARGET });
+}
+
+function proxyHome(req, res) {
+  if (req.url === '/home.css') req.url = '/style.css';
+  homeProxy.web(req, res, { target: HOME_TARGET });
 }
 
 function handleRequest(req, res) {
@@ -52,23 +54,25 @@ function handleRequest(req, res) {
     return;
   }
 
-  if (url.pathname === '/wind' || url.pathname.startsWith('/wind/')) {
-    proxyWind(req, res);
+  if (url.pathname === '/score-practice') {
+    res.writeHead(301, { Location: '/score-practice/' });
+    res.end();
     return;
   }
 
-  const staticFiles = {
-    '/': ['index.html', 'text/html; charset=utf-8'],
-    '/index.html': ['index.html', 'text/html; charset=utf-8'],
-    '/home.css': ['home.css', 'text/css; charset=utf-8'],
-    '/score-practice/': ['score-practice/index.html', 'text/html; charset=utf-8'],
-    '/score-practice/index.html': ['score-practice/index.html', 'text/html; charset=utf-8'],
-    '/score-practice/style.css': ['score-practice/style.css', 'text/css; charset=utf-8'],
-    '/score-practice/app.js': ['score-practice/app.js', 'text/javascript; charset=utf-8'],
-  };
-  const file = staticFiles[url.pathname];
-  if (file) {
-    sendFile(res, file[0], file[1]);
+  if (url.pathname.startsWith('/score-practice/')) {
+    proxyScorePractice(req, res);
+    return;
+  }
+
+  if (url.pathname === '/' || url.pathname === '/index.html'
+    || url.pathname === '/style.css' || url.pathname === '/home.css') {
+    proxyHome(req, res);
+    return;
+  }
+
+  if (url.pathname === '/wind' || url.pathname.startsWith('/wind/')) {
+    proxyWind(req, res);
     return;
   }
 
@@ -87,8 +91,29 @@ server.on('upgrade', (req, socket, head) => {
   proxy.ws(req, socket, head, { target: WIND_TARGET });
 });
 
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`立直麻将工具集已启动：http://localhost:${PORT}/`);
-  console.log(`风向盘入口：http://localhost:${PORT}/wind/`);
-  console.log(`点数练习入口：http://localhost:${PORT}/score-practice/`);
+scorePracticeProxy.on('error', (error, req, res) => {
+  if (res && !res.headersSent) {
+    res.writeHead(502, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('点数计算服务暂不可用，请先启动 score-practice 服务。');
+  } else if (res && res.destroy) {
+    res.destroy();
+  }
+  console.error('score-practice proxy error:', error.message);
+});
+
+homeProxy.on('error', (error, req, res) => {
+  if (res && !res.headersSent) {
+    res.writeHead(502, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('首页服务暂不可用，请先启动 home 服务。');
+  } else if (res && res.destroy) {
+    res.destroy();
+  }
+  console.error('home proxy error:', error.message);
+});
+
+listenWithFallback(server, PORT, '0.0.0.0', (actualPort) => {
+  console.log(`立直麻将工具集已启动：http://localhost:${actualPort}/`);
+  console.log(`首页入口：http://localhost:${actualPort}/`);
+  console.log(`风向盘入口：http://localhost:${actualPort}/wind/`);
+  console.log(`点数练习入口：http://localhost:${actualPort}/score-practice/`);
 });

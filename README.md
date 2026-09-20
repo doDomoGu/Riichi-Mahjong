@@ -10,22 +10,33 @@
 
 ## 本地启动
 
-需要 Node.js 18+，分别启动风向盘模块和仓库根网关：
-
-```bash
-cd wind
-npm install
-npm start
-```
-
-另开一个终端：
+需要 Node.js 18+，可以一键启动全部服务：
 
 ```bash
 npm install
 npm start
 ```
 
-然后访问 <http://localhost:8081/>。根网关负责首页和二级目录转发，功能模块仍然保持独立。也可以通过 `PORT=8080 npm start` 指定其他端口。
+默认启动：
+
+```text
+gateway          统一网关（8080）
+home             总导航页服务（3000）
+wind             风向盘服务（3001）
+score-practice   点数计算服务（3002）
+```
+
+也可以按参数选择要启动的项目：
+
+```bash
+npm start -- gateway
+npm start -- home
+npm start -- wind
+npm start -- score-practice
+npm start -- wind score-practice
+```
+
+也支持 `--gateway`、`--home`、`--wind`、`--score-practice` 写法。访问地址为 <http://localhost:8080/>。启动器会自动探测端口占用并逐个递增，也会把实际端口传给网关。任一服务异常退出时会停止其他服务。
 
 ## 线上地址
 
@@ -39,8 +50,10 @@ npm start
 
 ```text
 .
-├── index.html              # 总导航页
-├── home.css                # 总导航页样式
+├── home/                   # 总导航页子项目
+│   ├── index.html
+│   ├── style.css
+│   └── server/             # 首页服务
 ├── server/                 # 仓库级统一访问网关
 ├── wind/                   # 风向盘功能模块
 │   ├── client/             # Vue 前端
@@ -48,10 +61,12 @@ npm start
 │   ├── data/               # 本地运行数据
 │   ├── deploy/             # 模块部署配置
 │   └── package.json        # 模块依赖和脚本
-└── score-practice/         # 独立的点数计算练习模块（纯静态页面）
+└── score-practice/         # 独立的点数计算练习模块
     ├── index.html
     ├── style.css
-    └── app.js
+    ├── app.js
+    ├── server/              # 点数计算业务服务和题目保存接口
+    └── question-history/    # 本地题目历史（内容被 Git 忽略）
 ```
 
-各功能模块在业务上相互独立，拥有自己的页面、依赖和运行方式。总网关只负责统一访问地址和路径转发，不直接引用模块内部业务代码。后续增加工具时，建议新增一个独立目录，在网关增加路径映射，并在根目录导航页增加入口。
+各功能模块在业务上相互独立，拥有自己的页面、依赖和运行方式。总网关只负责统一访问地址和模块路由转发；首页、`wind`、`score-practice` 均由自己的服务提供。后续增加工具时，建议新增一个独立目录，在网关增加模块转发，并在根目录导航页增加入口。
