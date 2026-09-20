@@ -1,0 +1,46 @@
+README.md
+  s_924b67864cb9b9::t_779fec7edc68d1 68
+score-practice/style.css
+  s_924b67864cb9b9::t_803a969eb74267 314,319,321,339
+  s_924b67864cb9b9::t_6cc4f4817430d9 584-590
+  s_924b67864cb9b9::t_8f9c1634969f84 283
+  s_924b67864cb9b9::t_0730db4369f2be 516-520
+  s_924b67864cb9b9::t_1dfa4118836bca 577-583,591-594,776-785
+  s_924b67864cb9b9::t_5fbc54a0fc46f3 294-297
+score-practice/app.js
+  s_924b67864cb9b9::t_fec0aef9b4d3e5 445-446
+  s_924b67864cb9b9::t_c163602000baff 458-466
+  s_924b67864cb9b9::t_58ecac3effcd4b 237
+  s_924b67864cb9b9::t_5aa7e7bd66be0c 511-513,651-657
+  s_924b67864cb9b9::t_eef11536f4788e 752-756,765
+  s_924b67864cb9b9::t_894032b05ecca3 249-261,274,276,279,285,483,488,494,497-498
+  s_924b67864cb9b9::t_ca3298177b4e61 490
+  s_924b67864cb9b9::t_32f0f6e8bab5d0 725-733
+score-practice/index.html
+  s_924b67864cb9b9::t_d08094721d640d 127-134
+  s_924b67864cb9b9::t_2aba066e2c197a 226
+  s_924b67864cb9b9::t_08ed06b77faebe 84-88
+  s_924b67864cb9b9::t_42bcbb18fd00a1 209-220
+  s_924b67864cb9b9::t_88444517fab93b 117,125-126,135
+  s_924b67864cb9b9::t_0f79398fee49c0 107,110-111,113,116
+deploy/remote-deploy.sh
+  s_924b67864cb9b9::t_93f654f44161d0 1-29,31-37,39-45
+  s_924b67864cb9b9::t_97c4527a99c393 38
+  s_924b67864cb9b9::t_0b743b2ed642d6 30
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.44-trip",
+  "base_commit_sha": "eba13ed07e3be2c854a3e972a9e06dc28dd3fb17",
+  "prompts": {},
+  "sessions": {
+    "s_924b67864cb9b9": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "fd49ff71-2ce1-4e7a-a17d-f77b0fb68b89",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "gulingjun <gulingjun@trip.com>"
+    }
+  }
+}
