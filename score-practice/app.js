@@ -89,8 +89,9 @@ const handTemplates = [
   },
   {
     shape: '跳满',
-    groups: ['123m', '456m', '789p', '234s'],
-    pair: '55p',
+    // 为了与“混一色”匹配：和牌牌型应为“单一花色 + 字牌”
+    groups: ['123m', '456m', '789m', '234m'],
+    pair: '55z',
     yaku: ['混一色', '立直', '宝牌×2'],
     han: 6,
     baseHan: 4,
@@ -170,8 +171,8 @@ const handDetails = {
     openMelds: [],
   },
   '跳满': {
-    handGroups: ['123m', '456m', '789p', '23s', '55p'],
-    winTile: '4s',
+    handGroups: ['123m', '456m', '789m', '23m', '55z'],
+    winTile: '4m',
     waitType: '两面听',
     riichi: true,
     openMelds: [],
@@ -238,6 +239,177 @@ const suitNames = {
 };
 
 const $ = (selector) => document.querySelector(selector);
+
+/**
+ * 生成并用于计算的“和牌事实”结构（等待下一步用来做严格 fu 计算）。
+ * 注意：按你的方案A，暗杠只出现在 concealedKans，并且不参与“展示用手牌集合”的展开。
+ */
+/**
+ * @typedef {Object} WinningHandFacts
+ * @property {string[]} groups - 4个面子（刻/顺；此处不包含暗杠的4张牌面）
+ * @property {string} pair - 雀头（两张）
+ * @property {string[]} openMelds - 副露面子（吃/碰/明杠），不包含暗杠
+ * @property {string[]} concealedKans - 暗杠编码（方案1：1111m 等，且不计入手牌13张）
+ * @property {string} winTile - 和牌牌（单张，形如 '4s' 或 '6z'）
+ * @property {'ron'|'tsumo'} winType
+ * @property {string} waitType - 仅用于 fu 计算（如 '两面听'/'边张/坎张' 等枚举）
+ * @property {boolean} riichi
+ * @property {boolean} ippatsu
+ *
+ * @property {number} roundWind
+ * @property {number} playerWind
+ * @property {string[]} doraIndicators
+ * @property {string[]} uraDoraIndicators
+ * @property {number} redDoraCount
+ * @property {number} kanCount - 明杠+暗杠数量（用于宝牌/里宝牌数量等）
+ *
+ * @property {number} honba
+ * @property {boolean} dealer - 庄家/子家（庄家 true）
+ *
+ * @property {string[]} hands - 展示/计算用的手牌（由结构展开得到；暗杠不进入该展示集合）
+ */
+
+function tileGroupsToHand13({ groups, pair }) {
+  // groups/pair 均为“紧凑编码”（如 '123m'、'55p'），直接展开为13张用于展示/统计。
+  // 不从 concealedKans/openMelds 取牌，确保“暗杠不计入手牌13张”。
+  const toTiles = (groupStr) => {
+    const match = groupStr.match(/^([1-9]+)([mpsz])$/);
+    if (!match) return [];
+    const [digits, suit] = [match[1], match[2]];
+    return [...digits].map((d) => `${d}${suit}`);
+  };
+  const tiles = [...groups.flatMap(toTiles), ...toTiles(pair)];
+  return tiles;
+}
+
+function buildWinTilesFromQuestion(question) {
+  // 将 groups/openMelds/concealedKans/pair 整合到一个字段 winTiles 中。
+  // 注意：为避免大规模重构，本函数先“兼容性整合”，不保证严格限定元素个数恒为 5；
+  // 后续当你把符数/役种逻辑也迁移到 winTiles 时，再进一步规范成“4面子+1雀头(+winTile)”的单一口径。
+  const parseMeld = (meldStr, open) => {
+    // 顺子：123m / 456p / 789s
+    if (/^[1-9]{3}[mps]$/.test(meldStr)) {
+      const ms = meldStr.match(/^([1-9])([1-9])([1-9])([mps])$/);
+      // 由于 meldStr 为 '123m'，直接拆位：
+      const m = meldStr.match(/^([1-9])([1-9])([1-9])([mps])$/);
+      const a = `${m[1]}${m[4]}`;
+      const b = `${m[2]}${m[4]}`;
+      const c = `${m[3]}${m[4]}`;
+      return { kind: 'mentsu', subtype: 'shun', open, tiles: [a, b, c] };
+    }
+    // 刻子：111m / 555z
+    if (/^([1-9])\1\1[mpsz]$/.test(meldStr)) {
+      const m = meldStr.match(/^([1-9])\1\1([mpsz])$/);
+      const tile = `${m[1]}${m[2]}`;
+      return { kind: 'mentsu', subtype: 'triplet', open, tiles: [tile, tile, tile] };
+    }
+    // 杠：1111m / 5555z（方案1 编码）
+    if (/^([1-9])\1\1\1[mpsz]$/.test(meldStr)) {
+      const m = meldStr.match(/^([1-9])\1\1\1([mpsz])$/);
+      const tile = `${m[1]}${m[2]}`;
+      return { kind: 'mentsu', subtype: 'kan', open, tiles: [tile, tile, tile, tile] };
+    }
+    return null;
+  };
+
+  const elements = [];
+  (question.groups || []).forEach((g) => {
+    const parsed = parseMeld(g, false);
+    if (parsed) elements.push(parsed);
+  });
+  (question.openMelds || []).forEach((m) => {
+    const parsed = parseMeld(m, true);
+    if (parsed) elements.push(parsed);
+  });
+  (question.concealedKans || []).forEach((k) => {
+    const parsed = parseMeld(k, false);
+    if (parsed) elements.push(parsed);
+  });
+
+  // 更稳妥：pair 直接拆成单牌
+  const pairFixed = (() => {
+    if (!question.pair) return null;
+    const m = question.pair.match(/^([1-9])\1([mpsz])$/);
+    if (!m) return null;
+    const t = `${m[1]}${m[2]}`;
+    return { kind: 'pair', subtype: null, tiles: [t, t] };
+  })();
+
+  if (pairFixed) elements.push(pairFixed);
+  return elements;
+}
+
+function validateWinTiles(question) {
+  const winTiles = question.winTiles || [];
+  const counts = new Map();
+  winTiles.forEach((el) => {
+    (el.tiles || []).forEach((t) => counts.set(t, (counts.get(t) || 0) + 1));
+  });
+  // 等价于“牌池最多每牌 4 张”
+  for (const [, c] of counts.entries()) {
+    if (c > 4) return false;
+  }
+
+  // winTile 必须出现在 winTiles 任意元素里
+  const win = question.winTile;
+  const exists = winTiles.some((el) => (el.tiles || []).includes(win));
+  return exists;
+}
+
+function collectHandTilesFromWinTiles(winTiles) {
+  // 只取手牌部分：open=false 且非 kan 的面子 + pair
+  const tiles = [];
+  (winTiles || []).forEach((el) => {
+    if (!el || !el.tiles) return;
+    if (el.kind === 'pair') {
+      tiles.push(...el.tiles);
+      return;
+    }
+    if (el.kind !== 'mentsu') return;
+    if (el.open === true) return;
+    if (el.subtype === 'kan') return;
+    tiles.push(...el.tiles);
+  });
+  return tiles;
+}
+
+function pickWinTileFromHand(winTiles) {
+  const tiles = collectHandTilesFromWinTiles(winTiles);
+  if (!tiles.length) return null;
+  return tiles[Math.floor(Math.random() * tiles.length)];
+}
+
+function buildFactsFromTemplate(template, details, dealer, winType, honba) {
+  const openMelds = details.openMelds || [];
+  const concealedKans = details.concealedKans || [];
+  const groups = template.groups || [];
+  // 现有模板里雀头通常在 template.pair；details.handGroups 主要用于展示/其它逻辑。
+  const pair = template.pair || details.pair;
+  const winTile = details.winTile || template.winTile;
+  // 只保留坎张枚举（嵌张在本项目里等同坎张）
+  const waitType = details.waitType === '嵌张' ? '坎张' : details.waitType;
+
+  return {
+    groups,
+    pair,
+    openMelds,
+    concealedKans,
+    winTile,
+    winType,
+    waitType,
+    riichi: !!details.riichi,
+    ippatsu: false,
+    roundWind: 0,
+    playerWind: 0,
+    doraIndicators: [],
+    uraDoraIndicators: [],
+    redDoraCount: 0,
+    kanCount: openMelds.length + concealedKans.length,
+    honba,
+    dealer,
+    hands: tileGroupsToHand13({ groups, pair }),
+  };
+}
 
 function formatTile(tile) {
   const match = tile.match(/^([1-9]+)([mpsz])$/);
@@ -324,6 +496,197 @@ function ceil100(value) {
   return Math.ceil(value / 100) * 100;
 }
 
+function parseSuitToken(token) {
+  const match = token.match(/^([1-9])([mpsz])$/);
+  if (!match) return null;
+  return { value: Number(match[1]), suit: match[2] };
+}
+
+function isTerminalOrHonor(value, suit) {
+  // 幺九：1/9；字牌：z
+  if (suit === 'z') return true;
+  return value === 1 || value === 9;
+}
+
+function isHonorTriplet(group) {
+  const match = group.match(/^([1-9])\1\1z$/);
+  return !!match;
+}
+
+function isKan(group) {
+  // 4张同牌子的编码：1111m / 5555z 等
+  return /^([1-9])\1\1\1[mpsz]$/.test(group);
+}
+
+function isTriplet(group) {
+  return /^([1-9])\1\1[mpsz]$/.test(group);
+}
+
+function groupValueSuit(group) {
+  const match = group.match(/^([1-9]+)([mpsz])$/);
+  if (!match) return null;
+  return { digits: match[1], suit: match[2] };
+}
+
+function calcMentsuFuForTripletOrKan(group, { isOpen, isKan }) {
+  const ms = groupValueSuit(group);
+  if (!ms) return 0;
+  const digit = ms.digits[0];
+  const value = Number(digit);
+  const suit = ms.suit;
+
+  // 中张：2符(刻子明) / 4符(刻子暗)
+  // 幺九：4符(刻子明) / 8符(刻子暗)
+  // 字牌：4符(刻子明) / 8符(刻子暗)
+  // 杠子在“刻子”基础上翻倍：8/16/16/32 等（按麻将规则表）
+  const terminalOrHonor = isTerminalOrHonor(value, suit);
+  if (!isKan) {
+    return isOpen ? (terminalOrHonor ? 4 : 2) : (terminalOrHonor ? 8 : 4);
+  }
+  // kan
+  return isOpen ? (terminalOrHonor ? 16 : 8) : (terminalOrHonor ? 32 : 16);
+}
+
+function ceilToTen(fu) {
+  // 符数向上取整到十位；底符 20 最少
+  return Math.ceil(fu / 10) * 10;
+}
+
+function calcWaitFu(waitType, winType) {
+  // waitType 仅由生成器给出（A1）
+  // 这里的 fu 逻辑不依赖 groups/pair，直接映射枚举
+  switch (waitType) {
+    case '两面听':
+      return 0;
+    case '双碰听':
+      return 0;
+    case '边张':
+    case '坎张':
+    case '单骑听牌':
+      return 2;
+    default:
+      // 未知枚举：保守不加
+      return 0;
+  }
+}
+
+function calculateFu(question) {
+  // 优先处理特殊固定符数：平和/门清荣和/平和自摸/七对子（若你后续生成这些形）
+  const isPinfu = question.yaku && question.yaku.includes('平和');
+  const isChiitoi = question.yaku && question.yaku.includes('七对子');
+  const isMenzenRon = question.openMelds.length === 0 && question.winType === 'ron';
+  const isMenzenTsumo = question.openMelds.length === 0 && question.winType === 'tsumo';
+
+  if (isChiitoi) {
+    return { fu: 25, fuDetails: ['七对子固定 25 符'] };
+  }
+  if (isPinfu) {
+    // 平和：荣和固定 30；平和自摸固定 20
+    const fu = isMenzenTsumo ? 20 : 30;
+    return { fu, fuDetails: [isMenzenTsumo ? '平和自摸固定 20 符' : '平和荣和固定 30 符'] };
+  }
+
+  let fu = 20; // 底符
+  const fuDetails = ['底符 20 符'];
+
+  // 门清荣和/自摸
+  if (question.winType === 'ron' && question.openMelds.length === 0) {
+    fu += 10;
+    fuDetails.push('门清荣和 10 符');
+  } else if (question.winType === 'tsumo') {
+    // 自摸加 2 符
+    fu += 2;
+    fuDetails.push('自摸 2 符');
+  }
+
+  const winTiles = question.winTiles;
+  if (Array.isArray(winTiles) && winTiles.length) {
+    const tileToMeldCode = (tiles) => {
+      if (!tiles || tiles.length === 0) return '';
+      const suit = tiles[0].slice(-1);
+      const digit = tiles[0][0];
+      return `${digit.repeat(tiles.length)}${suit}`;
+    };
+
+    // 雀头：役牌雀头 2 符（仅处理字牌）
+    const pairEl = winTiles.find((el) => el.kind === 'pair');
+    if (pairEl?.tiles?.length === 2) {
+      const t = pairEl.tiles[0];
+      const suit = t.slice(-1);
+      const value = Number(t[0]);
+      if (suit === 'z' && (value >= 1 && value <= 7)) {
+        fu += 2;
+        fuDetails.push('役牌雀头 2 符');
+      }
+    }
+
+    // 面子符：顺子不计；triplet/kan 计符（kan 视 open 与终幺九/字牌）
+    winTiles.forEach((el) => {
+      if (el.kind !== 'mentsu') return;
+      if (!['triplet', 'kan'].includes(el.subtype)) return;
+      const meldCode = tileToMeldCode(el.tiles);
+      const isOpen = !!el.open;
+      const isKanFlag = el.subtype === 'kan';
+
+      const add = calcMentsuFuForTripletOrKan(meldCode, { isOpen, isKan: isKanFlag });
+      if (!add) return;
+
+      fu += add;
+      if (isKanFlag) {
+        const ms = groupValueSuit(meldCode);
+        const digit = ms?.digits?.[0];
+        const value = Number(digit);
+        const suit = ms?.suit;
+        const isYao9OrHonor = isTerminalOrHonor(value, suit);
+        fuDetails.push(`暗/明杠${isYao9OrHonor ? '幺九字牌' : '中张'} ${add} 符`);
+      } else {
+        fuDetails.push(`${isHonorTriplet(meldCode) ? '字牌' : '中张/幺九'} ${add} 符`);
+      }
+    });
+  } else {
+    // 回退：旧字段计算（过渡用）
+    const pairMatch = question.pair?.match(/^([1-9])\1z$/);
+    if (pairMatch) {
+      fu += 2;
+      fuDetails.push('役牌雀头 2 符');
+    }
+
+    const openMeldSet = new Set(question.openMelds.map(meldTiles));
+    question.groups.forEach((group) => {
+      if (isTriplet(group)) {
+        const add = calcMentsuFuForTripletOrKan(group, { isOpen: openMeldSet.has(group), isKan: false });
+        if (add) {
+          fu += add;
+          fuDetails.push(`${isHonorTriplet(group) ? '字牌' : '中张/幺九'} ${add} 符`);
+        }
+      }
+    });
+
+    (question.concealedKans || []).forEach((kan) => {
+      const ms = groupValueSuit(kan);
+      if (!ms) return;
+      const digit = ms.digits[0];
+      const value = Number(digit);
+      const suit = ms.suit;
+      const isYao9OrHonor = isTerminalOrHonor(value, suit);
+      const add = isYao9OrHonor ? 32 : 16;
+      fu += add;
+      fuDetails.push(`暗杠${isYao9OrHonor ? '幺九字牌' : '中张'} ${add} 符`);
+    });
+  }
+
+  // 听牌形符（仅由 waitType）
+  const waitFu = calcWaitFu(question.waitType, question.winType);
+  if (waitFu) {
+    fu += waitFu;
+    fuDetails.push(`${question.waitType} ${waitFu} 符`);
+  } else {
+    // 对“两面听/未知”不加符，保持 fuDetails 结构简洁
+  }
+
+  return { fu: ceilToTen(fu), fuDetails };
+}
+
 function limitFor(han, fu) {
   if (han >= 13) return { label: '役满', base: 8000 };
   if (han >= 11) return { label: '三倍满', base: 6000 };
@@ -346,6 +709,7 @@ function calculatePoints(question) {
     const points = ceil100(base * (dealer ? 6 : 4));
     payments = { ron: points + honba * 300 };
   } else if (dealer) {
+    // 亲家自摸：按你指定口径使用 base * 2
     const each = ceil100(base * 2) + honba * 100;
     payments = { each };
   } else {
@@ -419,53 +783,523 @@ function hasWinningYaku(question) {
     && isYakuActuallyPresent(yaku, question)
   ));
   const riichiYaku = question.riichi && !question.openMelds.length;
-  const menzenTsumoYaku = question.winType === 'tsumo' && !question.openMelds.length;
-  return riichiYaku || menzenTsumoYaku || structuralYaku;
+  // 生成题目时，不允许仅靠“门清自摸”来放行无效的役种组合；
+  // 否则会出现役种与牌型不匹配（例如断幺九却含有幺九/字牌）的问题。
+  return riichiYaku || structuralYaku;
+}
+
+function normalizeTileForMatch(tile) {
+  // '4m' / '5z' => keep as-is
+  return tile;
+}
+
+function expandGroupToTiles(group) {
+  const match = group.match(/^([1-9]+)([mpsz])$/);
+  if (!match) return [];
+  const [digits, suit] = [match[1], match[2]];
+  return [...digits].map((d) => `${d}${suit}`);
+}
+
+function allTilesFromQuestion(question) {
+  const baseGroups = [
+    ...(question.groups || []),
+    ...(question.openMelds || []),
+    ...(question.concealedKans || []),
+    question.pair,
+    question.winTile,
+  ];
+  // 注意：question.winTile 是“和牌牌”不在 question.groups/pair 里；用于某些役的判断更直观。
+  // 若你希望更严格（不要用 winTile 参与结构判断），后续我可以再调。
+  return baseGroups.flatMap((g) => expandGroupToTiles(g));
+}
+
+function extractMentsuFromGroups(groups) {
+  // 返回：sequences/triplets 分开统计（只看 groups 内部的编码）
+  const sequences = [];
+  const triplets = [];
+  groups.forEach((group) => {
+    if (/^[1-9]{3}[mps]$/.test(group)) sequences.push(group);
+    else if (/^([1-9])\1\1[mpsz]$/.test(group)) triplets.push(group);
+  });
+  return { sequences, triplets };
+}
+
+function computeYakuFromFacts(question) {
+  // 这里只做“是否成立”的识别集合；番数由 yakuOptions 的 closed/open 规则计算
+  const labels = new Set();
+  const openMeldCount = (question.openMelds || []).length;
+
+  const allTiles = allTilesFromQuestion(question);
+  const allTokens = allTiles.join('');
+
+  const suitsInHand = new Set(allTiles.filter((t) => /[mpsz]/.test(t)).map((t) => t.slice(-1)));
+  const suitSetNoZ = new Set([...allTiles].filter((t) => /[mps]/.test(t)).map((t) => t.slice(-1)));
+
+  // 断幺九：无 1/9/字牌
+  const isTanyao = !/(1|9|z)/.test(allTokens);
+  if (isTanyao) labels.add('断幺九');
+
+  // 役牌：存在 字牌刻子（含雀头）
+  const honorTripletsOrPair = (() => {
+    const tiles = [...(question.groups || []), question.pair];
+    return tiles.some((g) => /^([1-7])\1\1z$/.test(g)) || (question.pair || '').match(/^([1-7])\1z$/);
+  })();
+  if (honorTripletsOrPair) labels.add('役牌');
+
+  // 一气通贯：同一花色内 123/456/789 顺子
+  const seqGroupsAll = [...(question.groups || []), ...(question.openMelds || [])]
+    .filter((g) => /^[1-9]{3}[mps]$/.test(g));
+  const hasIttsuInSuit = (suit) => {
+    const patterns = new Set(seqGroupsAll
+      .filter((g) => g.endsWith(suit))
+      .map((g) => g.slice(0, 3))
+    );
+    return patterns.has('123') && patterns.has('456') && patterns.has('789');
+  };
+  if (hasIttsuInSuit('m') || hasIttsuInSuit('p') || hasIttsuInSuit('s')) {
+    labels.add('一气通贯');
+  }
+
+  // 三色同顺：同一数字组合在三花色分别出现顺子
+  const hasSanshokuDoujun = () => {
+    const combos = new Map(); // key: '123' => set of suits
+    seqGroupsAll.forEach((g) => {
+      const num = g.slice(0, 3);
+      const suit = g.slice(-1);
+      if (!combos.has(num)) combos.set(num, new Set());
+      combos.get(num).add(suit);
+    });
+    for (const [, suitSet] of combos.entries()) {
+      if (suitSet.size === 3 && ['123', '456', '789'].includes([...combos.keys()][0])) {
+        // 上面这个条件不严谨但足够用于你现有编码模板的“组合顺”
+      }
+      // 更稳：只要同一个 num 在 m/p/s 都出现即可
+      for (const [num, suitSet2] of combos.entries()) {
+        if (num && suitSet2.has('m') && suitSet2.has('p') && suitSet2.has('s')) return true;
+      }
+    }
+    return false;
+  };
+  // 你当前 yakuOptions 里“三色同顺”存在，但代码里很少出现；这里先不硬判，避免误报
+  // if (hasSanshokuDoujun()) labels.add('三色同顺');
+
+  // 混一色 / 清一色
+  if (suitsInHand.has('z')) {
+    const hasMps = suitsInHand.has('m') || suitsInHand.has('p') || suitsInHand.has('s');
+    if (hasMps) labels.add('混一色');
+    // 字牌+一种花色 => 混一色；若只有 m/p/s 之一且无别的 mps 花色才是清一色（见下）
+  } else {
+    if (suitSetNoZ.size === 1) labels.add('清一色');
+  }
+
+  // 纯全带幺九 / 混全带幺九：先用“每个刻子/顺子都包含幺九/字牌”的近似判定
+  // （完整精确需要更细的面子拆分与“明刻/暗刻/顺子边张”检查；你后续文档要求可以再补齐。）
+  // 暂不强行加入，以免误报。
+
+  // 七对子：当前生成器是 4面子+1雀头，不太会出现；先不支持。
+
+  // 对对和：所有面子都是刻子/杠子（open/close都算）
+  const allMentsu = [...(question.groups || []), ...(question.openMelds || []), ...(question.concealedKans || [])];
+  const isToitoi = allMentsu.length > 0 && allMentsu.every((g) => /^([1-9])\1\1[mpsz]$/.test(g) || /^([1-9])\1\1\1[mpsz]$/.test(g));
+  if (isToitoi) labels.add('对对和');
+
+  // 三暗刻：所有刻子都为暗刻（这里简化：只要 openMelds 没有刻子，且存在>=3个刻子）
+  const openTriplets = (question.openMelds || []).filter((g) => /^([1-9])\1\1[mpsz]$/.test(g) || /^([1-9])\1\1\1[mpsz]$/.test(g));
+  const closedTriplets = [...(question.groups || [])].filter((g) => /^([1-9])\1\1[mpsz]$/.test(g));
+  if (openTriplets.length === 0 && closedTriplets.length >= 3) labels.add('三暗刻');
+
+  // 一盃口 / 二杯口：门清限定且需要顺子重复。此处先做门清条件过滤后的结构判定
+  if (openMeldCount === 0) {
+    const seqOnly = seqGroupsAll.map((g) => g.slice(0, 3) + g.slice(-1)); // '123m'
+    const counts = new Map();
+    seqOnly.forEach((s) => counts.set(s, (counts.get(s) || 0) + 1));
+    const pairs = [...counts.values()].reduce((acc, c) => acc + Math.floor(c / 2), 0);
+    if (pairs >= 1) labels.add('一盃口');
+    if (pairs >= 2) labels.add('二杯口');
+  }
+
+  // 平和：门清 + 两面听 + 全顺子 + 雀头不是役牌
+  if (openMeldCount === 0
+    && question.waitType === '两面听'
+    && (question.concealedKans || []).length === 0
+  ) {
+    const groupsOnly = question.groups || [];
+    const hasOnlySequences = groupsOnly.every((g) => /^[1-9]{3}[mps]$/.test(g));
+    const pair = question.pair || '';
+    const pairHonor = /^([1-7])\1z$/.test(pair); // 役牌雀头：1z~7z
+    // pinfu 的雀头不能是役牌（字牌）
+    if (hasOnlySequences && !pairHonor) {
+      labels.add('平和');
+    }
+  }
+
+  // 清一色/混一色：已处理；其它役先不硬判，等你确认后再继续补齐
+
+  return [...labels];
 }
 
 function randomQuestion() {
-  const template = handTemplates[Math.floor(Math.random() * handTemplates.length)];
+  // 先用一个不依赖模板的最小生成器跑通全链路：平和（门清 + 两面听 + 全顺子 + 非字牌雀头）
   const dealer = Math.random() < 0.25;
   const winType = Math.random() < 0.5 ? 'ron' : 'tsumo';
   const honba = state.includeHonba ? Math.floor(Math.random() * 4) : 0;
-  const question = {
-    ...template,
-    ...handDetails[template.shape],
-    dealer,
-    winType,
-    honba,
-    concealedKans: handDetails[template.shape].concealedKans || [],
-    kanCount: Math.floor(Math.random() * 3),
-    ippatsu: false,
-  };
-  if (!hasWinningYaku(question)) {
-    return randomQuestion();
+
+  const riichi = Math.random() < 0.8;
+  const ippatsu = riichi && Math.random() < 0.35;
+
+  const roll = Math.random();
+  let question;
+  if (roll < 0.27) {
+    question = generateFactsForPinfu({ dealer, winType, honba, riichi, ippatsu });
+  } else if (roll < 0.54) {
+    question = generateFactsForTanyao({ dealer, winType, honba, riichi, ippatsu });
+  } else if (roll < 0.81) {
+    question = generateFactsForIttsu({ dealer, winType, honba, riichi, ippatsu });
+  } else {
+    question = generateFactsForYakuhai({ dealer, winType, honba, riichi, ippatsu });
   }
-  question.ippatsu = question.riichi && Math.random() < 0.35;
-  question.yaku = question.yaku.filter((item) => item !== '一发');
+
+  // 从 facts 推理役种，并补齐状态性役
+  question.yaku = computeYakuFromFacts(question);
+  if (question.riichi) question.yaku.push('立直');
   if (question.ippatsu) question.yaku.push('一发');
-  question.doraIndicators = randomTiles(1 + question.kanCount);
-  question.uraDoraIndicators = question.riichi
-    ? randomTiles(question.doraIndicators.length)
-    : [];
+  if (question.openMelds.length === 0 && question.winType === 'tsumo') question.yaku.push('门清自摸');
+
+  // 宝牌/里宝牌与赤宝牌
+  question.kanCount = 0;
+  question.doraIndicators = randomTiles(1);
+  question.uraDoraIndicators = question.riichi ? randomTiles(question.doraIndicators.length) : [];
+
   const tileGroups = [...question.groups, question.pair];
-  question.redDoraCount = Math.min(Math.floor(Math.random() * 3), countTile(tileGroups, '5m')
-    + countTile(tileGroups, '5p') + countTile(tileGroups, '5s'));
+  question.redDoraCount = Math.min(
+    Math.floor(Math.random() * 3),
+    countTile(tileGroups, '5m') + countTile(tileGroups, '5p') + countTile(tileGroups, '5s'),
+  );
   question.doraCount = [...question.doraIndicators, ...question.uraDoraIndicators]
     .reduce((total, indicator) => total + countTile(tileGroups, nextDoraTile(indicator)), 0)
     + question.redDoraCount;
-  question.han = template.baseHan + (question.ippatsu ? 1 : 0) + question.doraCount;
-  if (question.shape === '满贯') {
-    question.fu = 40;
-    question.fuDetails = [
-      '底符 20 符',
-      question.winType === 'ron' ? '门清荣和 10 符' : '自摸 2 符',
-      '役牌雀头 2 符',
-      '中张暗刻 8 符',
-    ];
-  }
+
+  // 计算番数
+  const hasOpen = question.openMelds.length > 0;
+  const yakuHanTotal = question.yaku.reduce((sum, yakuLabel) => {
+    if (yakuLabel.startsWith('宝牌×') || yakuLabel === '赤宝牌') return sum;
+    const opt = yakuOptions.find((o) => o.label === yakuLabel);
+    if (!opt) return sum;
+    const han = hasOpen && opt.openHan !== undefined ? opt.openHan : opt.closedHan;
+    return sum + (typeof han === 'number' ? han : 0);
+  }, 0);
+
+  if (question.doraCount > 0) question.yaku.push(`宝牌×${question.doraCount}`);
+  if (question.redDoraCount > 0) question.yaku.push('赤宝牌');
+  question.han = yakuHanTotal + question.doraCount;
+
+  // 符数
+  const fuResult = calculateFu(question);
+  question.fu = fuResult.fu;
+  question.fuDetails = fuResult.fuDetails;
+
   question.answer = calculatePoints(question);
+  // 将当前 facts 结构整合成更清晰的 winTiles（用于 debug/校验/未来迁移逻辑）
+  question.winTiles = buildWinTilesFromQuestion(question);
+  if (!validateWinTiles(question)) {
+    return randomQuestion();
+  }
   return question;
+}
+
+function generateFactsForPinfu({ dealer, winType, honba, riichi, ippatsu }) {
+  const suit = ['m', 'p', 's'][Math.floor(Math.random() * 3)];
+  const makeSeq = (start) => `${start}${start + 1}${start + 2}${suit}`;
+
+  // 固定三顺：123 + 456 + 789，再补一顺：234 / 345 / 678（保证仍是全顺）
+  const mentsu = [makeSeq(1), makeSeq(4), makeSeq(7)];
+  const fourth = [makeSeq(2), makeSeq(3), makeSeq(6)][Math.floor(Math.random() * 3)];
+  mentsu.push(fourth);
+
+  // 雀头取非役牌（不取 z），并避免 1/9 让其更接近平和构成的常见形态
+  const pairVal = [2, 3, 4, 5, 6, 7, 8][Math.floor(Math.random() * 7)];
+  const pair = `${pairVal}${pairVal}${suit}`;
+
+  // 暂时先用“两面听”里比较常见的牌：2~7（避免 1/9 更像边张）
+  // 确保 winTile 一定来自当前的（4面子+雀头）所组成的牌池里
+  const tiles14 = [
+    ...mentsu.flatMap((g) => {
+      const m = g.match(/^([1-9]+)([mps])$/);
+      if (!m) return [];
+      const [digits, s] = [m[1], m[2]];
+      return [...digits].map((d) => `${d}${s}`);
+    }),
+    `${pair[0]}${suit}`,
+    `${pair[0]}${suit}`,
+  ];
+
+  // 先从“手牌部分”抽 winTile，再做平和约束过滤（winTile 不能是顺子中间张）
+  const temp = {
+    groups: mentsu,
+    openMelds: [],
+    concealedKans: [],
+    pair,
+  };
+  const tempWinTiles = buildWinTilesFromQuestion(temp);
+  const shunMiddles = new Set(
+    mentsu
+      .filter((g) => /^[1-9]{3}[mps]$/.test(g))
+      .map((g) => {
+        const m = g.match(/^([1-9])([1-9])([1-9])([mps])$/);
+        return `${m[2]}${m[4]}`;
+      }),
+  );
+  const handTiles = collectHandTilesFromWinTiles(tempWinTiles);
+  const candidate = handTiles.filter((t) => !shunMiddles.has(t));
+  const winTile = candidate[Math.floor(Math.random() * candidate.length)];
+
+  return {
+    groups: mentsu,
+    pair,
+    hands: tileGroupsToHand13({ groups: mentsu, pair }),
+    openMelds: [],
+    concealedKans: [],
+    winTile,
+    winType,
+    waitType: '两面听',
+    riichi,
+    ippatsu,
+    roundWind: 0,
+    playerWind: 0,
+    doraIndicators: [],
+    uraDoraIndicators: [],
+    redDoraCount: 0,
+    kanCount: 0,
+    honba,
+    dealer,
+  };
+}
+
+function generateFactsForTanyao({ dealer, winType, honba, riichi, ippatsu }) {
+  // 断幺九：只用 2~8 的数牌（m/p/s），不出现 1/9/字牌 z
+  const suit = ['m', 'p', 's'][Math.floor(Math.random() * 3)];
+  const makeSeq = (start) => `${start}${start + 1}${start + 2}${suit}`;
+
+  // 只挑不会包含 1/9 的顺子：例如 234/345/456/567/678
+  const seqPool = [makeSeq(2), makeSeq(3), makeSeq(4), makeSeq(5), makeSeq(6)];
+  const mentsu = [];
+  while (mentsu.length < 4) {
+    const cand = seqPool[Math.floor(Math.random() * seqPool.length)];
+    // 为了让听牌形之后更容易补，我们简单允许重复
+    mentsu.push(cand);
+  }
+
+  // 雀头也从 2~8 里选
+  const pairVal = [2, 3, 4, 5, 6, 7, 8][Math.floor(Math.random() * 7)];
+  const pair = `${pairVal}${pairVal}${suit}`;
+
+  // 从“手牌部分”抽 winTile（自动剔除副露/杠）
+  const temp = {
+    groups: mentsu,
+    openMelds: [],
+    concealedKans: [],
+    pair,
+  };
+  const tempWinTiles = buildWinTilesFromQuestion(temp);
+  const winTile = pickWinTileFromHand(tempWinTiles);
+
+  // 推导 waitType（用于避免“坎张却误判成两面听，从而产生平和”）
+  let inferredWaitType = '边张';
+  if (winTile === `${pairVal}${suit}`) {
+    inferredWaitType = '单骑听牌';
+  } else {
+    const winShun = mentsu.find((g) => /^[1-9]{3}[mps]$/.test(g) && g.includes(winTile[0]));
+    if (winShun) {
+      const m = winShun.match(/^([1-9])([1-9])([1-9])([mps])$/);
+      const middleTile = `${m[2]}${m[4]}`;
+      inferredWaitType = (middleTile === winTile) ? '坎张' : '边张';
+    }
+  }
+
+  return {
+    groups: mentsu,
+    pair,
+    hands: tileGroupsToHand13({ groups: mentsu, pair }),
+    openMelds: [],
+    concealedKans: [],
+    winTile,
+    winType,
+    waitType: inferredWaitType,
+    riichi,
+    ippatsu,
+    roundWind: 0,
+    playerWind: 0,
+    doraIndicators: [],
+    uraDoraIndicators: [],
+    redDoraCount: 0,
+    kanCount: 0,
+    honba,
+    dealer,
+  };
+}
+
+function generateFactsForIttsu({ dealer, winType, honba, riichi, ippatsu }) {
+  // 一气通贯：同一花色内存在 123 + 456 + 789 三顺
+  const suit = ['m', 'p', 's'][Math.floor(Math.random() * 3)];
+  const seq = (start) => `${start}${start + 1}${start + 2}${suit}`;
+
+  const mentsuBase = [seq(1), seq(4), seq(7)];
+  const pickSuit = () => ['m', 'p', 's'][Math.floor(Math.random() * 3)];
+  const isDice = () => Math.random() < 0.5;
+
+  // 第4个面子：可用任意花色、任意是否1/9/z
+  // 这里实现：顺子 or 刻子（先不做杠；你后续如果要杠，我再加）
+  let fourth;
+  if (isDice()) {
+    // 随机顺子：任意 suit，起点 1~7
+    const s = pickSuit();
+    const start = 1 + Math.floor(Math.random() * 7);
+    fourth = `${start}${start + 1}${start + 2}${s}`;
+  } else {
+    // 随机刻子：可以是数牌(1~9)或字牌(z 1~7)
+    if (Math.random() < 0.25) {
+      // 字牌刻子
+      const v = 1 + Math.floor(Math.random() * 7);
+      fourth = `${v}${v}${v}z`;
+    } else {
+      const s = pickSuit();
+      const v = 1 + Math.floor(Math.random() * 9);
+      fourth = `${v}${v}${v}${s}`;
+    }
+  }
+  const mentsu = [...mentsuBase, fourth];
+
+  // 雀头：任意花色（包含字牌）
+  let pair;
+  if (Math.random() < 0.25) {
+    const v = 1 + Math.floor(Math.random() * 7);
+    pair = `${v}${v}z`;
+  } else {
+    const s = pickSuit();
+    const v = 1 + Math.floor(Math.random() * 9);
+    pair = `${v}${v}${s}`;
+  }
+
+  // 先生成临时 winTiles，再从“手牌部分”抽 winTile
+  const temp = {
+    groups: mentsu,
+    openMelds: [],
+    concealedKans: [],
+    pair,
+  };
+  const tempWinTiles = buildWinTilesFromQuestion(temp);
+  const winTile = pickWinTileFromHand(tempWinTiles);
+
+  // 推导 waitType（简化版：顺子中间=坎张；否则边张；雀头=单骑）
+  let inferredWaitType = '边张';
+  if (winTile === `${pairVal}${suit}`) {
+    inferredWaitType = '单骑听牌';
+  } else {
+    const winShun = mentsu.find((g) => /^[1-9]{3}[mps]$/.test(g) && g.includes(winTile[0]));
+    if (winShun) {
+      const m = winShun.match(/^([1-9])([1-9])([1-9])([mps])$/);
+      const middleTile = `${m[2]}${m[4]}`;
+      inferredWaitType = (middleTile === winTile) ? '坎张' : '边张';
+    }
+  }
+
+  return {
+    groups: mentsu,
+    pair,
+    hands: tileGroupsToHand13({ groups: mentsu, pair }),
+    openMelds: [],
+    concealedKans: [],
+    winTile,
+    winType,
+    waitType: inferredWaitType,
+    riichi,
+    ippatsu,
+    roundWind: 0,
+    playerWind: 0,
+    doraIndicators: [],
+    uraDoraIndicators: [],
+    redDoraCount: 0,
+    kanCount: 0,
+    honba,
+    dealer,
+  };
+}
+
+function generateFactsForYakuhai({ dealer, winType, honba, riichi, ippatsu }) {
+  // 役牌：只考虑 中/白/发（z=5/6/7）
+  const yakuhaiVals = [5, 6, 7];
+  const v = yakuhaiVals[Math.floor(Math.random() * yakuhaiVals.length)];
+  const yakuhaiTriplet = `${v}${v}${v}z`;
+
+  // 补齐剩余 3 个面子：优先用顺子/刻子，避免引入字牌其它值（不影响役牌成立，但减少噪音）
+  const suit = ['m', 'p', 's'][Math.floor(Math.random() * 3)];
+  const seq = (start) => `${start}${start + 1}${start + 2}${suit}`;
+  const trip = (vv) => `${vv}${vv}${vv}${suit}`;
+
+  // 从 2~8 里挑，降低与断幺九/平和误判的耦合（但不做硬限制）
+  const v2 = 2 + Math.floor(Math.random() * 7);
+
+  // 组合 4 面子：1个役牌刻子 + 3个普通面子
+  const mentsu = [
+    yakuhaiTriplet,
+    Math.random() < 0.6 ? seq(1 + Math.floor(Math.random() * 7 - 1)) : trip(v2),
+    Math.random() < 0.6 ? seq(1 + Math.floor(Math.random() * 7 - 1)) : trip(v2),
+    Math.random() < 0.6 ? seq(1 + Math.floor(Math.random() * 7 - 1)) : trip(v2),
+  ];
+
+  // 雀头：任意（允许字牌也行）
+  const pairChoice = Math.random() < 0.15 ? 'z' : suit;
+  if (pairChoice === 'z') {
+    const pv = 1 + Math.floor(Math.random() * 7);
+    var pair = `${pv}${pv}z`;
+  } else {
+    const pv = 1 + Math.floor(Math.random() * 9);
+    var pair = `${pv}${pv}${suit}`;
+  }
+
+  // winTile：从“手牌部分”（不含 open/kan）抽一张
+  const temp = {
+    groups: mentsu,
+    openMelds: [],
+    concealedKans: [],
+    pair,
+  };
+  const tempWinTiles = buildWinTilesFromQuestion(temp);
+  const winTile = pickWinTileFromHand(tempWinTiles);
+
+  // waitType：简化先按顺子位置/雀头推断（后续你再验收精度）
+  let inferredWaitType = '边张';
+  if (winTile === pair[0] + pair[pair.length - 1]) {
+    inferredWaitType = '单骑听牌';
+  } else {
+    const winShun = mentsu.find((g) => /^[1-9]{3}[mps]$/.test(g) && g.includes(winTile[0]));
+    if (winShun) {
+      const m = winShun.match(/^([1-9])([1-9])([1-9])([mps])$/);
+      const middleTile = `${m[2]}${m[4]}`;
+      inferredWaitType = (middleTile === winTile) ? '坎张' : '边张';
+    }
+  }
+
+  return {
+    groups: mentsu,
+    pair,
+    hands: tileGroupsToHand13({ groups: mentsu, pair }),
+    openMelds: [],
+    concealedKans: [],
+    winTile,
+    winType,
+    waitType: inferredWaitType,
+    riichi,
+    ippatsu,
+    roundWind: 0,
+    playerWind: 0,
+    doraIndicators: [],
+    uraDoraIndicators: [],
+    redDoraCount: 0,
+    kanCount: 0,
+    honba,
+    dealer,
+  };
 }
 
 function formatPoints(value) {
@@ -477,24 +1311,61 @@ function renderQuestion() {
   const answer = q.answer;
   $('#winner-status').textContent = q.dealer ? '庄家' : '子家';
   $('#win-method-status').textContent = q.winType === 'ron' ? '捉铳' : '自摸';
-  const openMelds = new Set(q.openMelds.map(meldTiles));
-  const concealedKans = q.concealedKans || [];
-  const concealedKanTiles = new Set(concealedKans.map(meldTiles));
+  const winTiles = q.winTiles || [];
+
+  // 辅助：把 tiles ['1s','2s','3s'] 还原成 meld 编码 '123s'
+  const tilesToMeldCode = (tiles) => {
+    if (!tiles || !tiles.length) return '';
+    const suit = tiles[0].slice(-1);
+    const digits = tiles.map((t) => t.slice(0, -1)).join('');
+    return `${digits}${suit}`;
+  };
+
+  const openMeldCodes = new Set(
+    winTiles
+      .filter((el) => el.kind === 'mentsu' && el.open === true)
+      .map((el) => tilesToMeldCode(el.tiles)),
+  );
+
+  const concealedKanEls = winTiles.filter((el) => el.kind === 'mentsu' && el.subtype === 'kan' && el.open === false);
+  const concealedKansCodes = concealedKanEls.map((el) => tilesToMeldCode(el.tiles));
+
+  const concealedKanTiles = new Set(concealedKansCodes);
   const redState = { remaining: q.redDoraCount };
-  const concealedGroups = q.handGroups
-    .filter((group) => !openMelds.has(group) && !concealedKanTiles.has(group));
+  // UI：手牌区只显示“和牌前 13 张”，即从（4面子+雀头展开的14张）中移除一张 winTile
+  const tiles14 = winTiles.flatMap((el) => {
+    // 暗杠不进手牌区，且副露不进手牌区
+    if (el.kind !== 'mentsu' && el.kind !== 'pair') return [];
+    if (el.kind === 'mentsu') {
+      if (el.subtype === 'kan') return [];
+      if (el.open === true) return [];
+    }
+    return el.tiles || [];
+  });
+
+  const winTileToken = q.winTile;
+  const removed = { done: false };
+  const tiles13 = tiles14.filter((t) => {
+    if (!removed.done && t === winTileToken) {
+      removed.done = true;
+      return false;
+    }
+    return true;
+  });
+
   $('#hand-label').textContent = '手牌';
-  $('#hand-groups').innerHTML = concealedGroups
-    .map((group) => `<span>${formatTileGroup(group, redState)}</span>`).join('');
+  $('#hand-groups').innerHTML = tiles13
+    .map((t) => `<span>${formatTileGroup(t, redState)}</span>`)
+    .join('');
   $('#riichi-status').textContent = q.riichi ? '已立直' : '未立直';
   $('#ippatsu-status-item').hidden = !q.ippatsu;
-  $('#meld-status').textContent = q.openMelds.length ? '有副露' : '门清';
-  $('#open-melds').hidden = !q.openMelds.length;
-  $('#open-meld-list').innerHTML = q.openMelds
-    .map((meld) => `<span>${formatMeld(meld, redState)}</span>`).join('');
-  $('#concealed-kans').hidden = !concealedKans.length;
-  $('#concealed-kan-list').innerHTML = concealedKans
-    .map((kan) => `<span>暗杠 ${formatKan(kan, redState)}</span>`).join('');
+  $('#meld-status').textContent = openMeldCodes.size ? '有副露' : '门清';
+  $('#open-melds').hidden = openMeldCodes.size === 0;
+  $('#open-meld-list').innerHTML = Array.from(openMeldCodes)
+    .map((meldCode) => `<span>${formatMeld(meldCode, redState)}</span>`).join('');
+  $('#concealed-kans').hidden = concealedKansCodes.length === 0;
+  $('#concealed-kan-list').innerHTML = concealedKansCodes
+    .map((kanCode) => `<span>暗杠 ${formatKan(kanCode, redState)}</span>`).join('');
   $('#win-tile').innerHTML = formatTileGroup(q.winTile, redState);
   $('#dora-label').textContent = `宝牌指示牌（${q.doraIndicators.length} 张${
     q.kanCount ? `，${q.kanCount} 次开杠` : ''
@@ -658,7 +1529,18 @@ function closeYakuTool() {
 }
 
 function rawQuestionData() {
-  return JSON.stringify(state.question, null, 2);
+  const q = state.question || {};
+  // raw debug 口径：以 winTiles 为主，不再暴露 groups/pair 等旧字段
+  // 注意：UI/符数/役种计算依赖旧字段，因此这里只在 debug 输出时移除。
+  const {
+    groups,
+    pair,
+    hands,
+    openMelds,
+    concealedKans,
+    ...rest
+  } = q;
+  return JSON.stringify(rest, null, 2);
 }
 
 function openRawData() {
