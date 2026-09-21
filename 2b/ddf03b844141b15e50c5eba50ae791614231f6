@@ -1,0 +1,35 @@
+deploy.sh
+  s_924b67864cb9b9::t_079bfd3ad073f9 65-69
+  s_924b67864cb9b9::t_e6aa657e52c251 12
+  s_924b67864cb9b9::t_df35ccb80f7e6d 1-11,13-56,64,70-75
+  s_924b67864cb9b9::t_5113140f18b60b 57-63
+deploy/scp-pass.exp
+  s_924b67864cb9b9::t_73a7ae5acd096b 12
+  s_924b67864cb9b9::t_cf03dc111d35d0 1-11,13-25
+deploy/ssh-pass.exp
+  s_924b67864cb9b9::t_e3887709dfc51b 1-7,9-11,13-25
+  s_924b67864cb9b9::t_be8421f9216a36 8,12
+.gitignore
+  s_924b67864cb9b9::t_0b603f2a225122 4-6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.45-trip",
+  "base_commit_sha": "2bddf03b844141b15e50c5eba50ae791614231f6",
+  "prompts": {},
+  "humans": {
+    "h_fa183bc1ee823a": {
+      "author": "gulingjun <gulingjun@trip.com>"
+    }
+  },
+  "sessions": {
+    "s_924b67864cb9b9": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "fd49ff71-2ce1-4e7a-a17d-f77b0fb68b89",
+        "model": "composer-2.5"
+      },
+      "human_author": "gulingjun <gulingjun@trip.com>"
+    }
+  }
+}
