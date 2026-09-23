@@ -41,7 +41,6 @@ function proxyScorePractice(req, res) {
 }
 
 function proxyHome(req, res) {
-  if (req.url === '/home.css') req.url = '/style.css';
   homeProxy.web(req, res, { target: HOME_TARGET });
 }
 
@@ -66,12 +65,12 @@ function handleRequest(req, res) {
   }
 
   if (url.pathname === '/' || url.pathname === '/index.html'
-    || url.pathname === '/style.css' || url.pathname === '/home.css') {
+    || url.pathname === '/style.css') {
     proxyHome(req, res);
     return;
   }
 
-  if (url.pathname === '/wind' || url.pathname.startsWith('/wind/')) {
+  if (url.pathname.startsWith('/wind/')) {
     proxyWind(req, res);
     return;
   }

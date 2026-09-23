@@ -6,7 +6,9 @@ After=network.target mahjong-home.service mahjong-wind.service mahjong-score-pra
 Type=simple
 WorkingDirectory=/opt/riichi-mahjong
 Environment=NODE_ENV=production
-Environment=PORT=8080
+# 服务器上另有一份 nginx 配置（与本项目无关）占用了 8080，
+# 网关只能落在 8081；清理掉那份旧配置后再考虑改回 8080。
+Environment=PORT=8081
 Environment=WIND_TARGET=http://127.0.0.1:3001
 Environment=SCORE_PRACTICE_TARGET=http://127.0.0.1:3002
 Environment=HOME_TARGET=http://127.0.0.1:3000

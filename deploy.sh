@@ -40,7 +40,6 @@ tar -czf "$BUNDLE" \
   --exclude wind/node_modules \
   --exclude wind/client/dist \
   --exclude wind/data/store.json \
-  --exclude score-practice/question-history \
   --exclude .git \
   --exclude deploy.env \
   --exclude '*.log' \
