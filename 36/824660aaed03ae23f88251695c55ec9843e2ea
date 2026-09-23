@@ -1,0 +1,36 @@
+server/index.js
+  s_6536e283417a11::t_415ff531dcff31 68,73
+deploy/mahjong.conf
+  s_6536e283417a11::t_01cfeb06d39242 3,10-14
+  s_6536e283417a11::t_48e9a2e82dab23 1-2,4-9,15-23,25-33
+  s_6536e283417a11::t_841c4b633391d2 24
+deploy/dodomogu.conf
+  s_6536e283417a11::t_f96b1c0f66cce8 1-13,18,23-25
+scripts/listen-with-fallback.js
+  s_6536e283417a11::t_81b3b46ea27179 3-7,12
+deploy/remote-deploy.sh
+  s_6536e283417a11::t_aa8d5735a9264e 35-47
+deploy/mahjong-gateway.service
+  s_6536e283417a11::t_b6ee574e3ee3fa 9-11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.45-trip",
+  "base_commit_sha": "36824660aaed03ae23f88251695c55ec9843e2ea",
+  "prompts": {},
+  "humans": {
+    "h_fa183bc1ee823a": {
+      "author": "gulingjun <gulingjun@trip.com>"
+    }
+  },
+  "sessions": {
+    "s_6536e283417a11": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "74f447d3-8671-46c9-b564-d0bee4a54fc1",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "gulingjun <gulingjun@trip.com>"
+    }
+  }
+}
