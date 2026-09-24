@@ -1,0 +1,113 @@
+score-practice/tiles/Chun.svg
+  s_6536e283417a11::t_a0b5fd2a6cc277 1-232
+score-practice/tiles/Pei.svg
+  s_6536e283417a11::t_a0b5fd2a6cc277 1-236
+score-practice/tiles/Pin2.svg
+  s_6536e283417a11::t_a0b5fd2a6cc277 1-400
+score-practice/tiles/Sou4.svg
+  s_6536e283417a11::t_a0b5fd2a6cc277 1-573
+score-practice/tiles/Pin7.svg
+  s_6536e283417a11::t_a0b5fd2a6cc277 1-567
+score-practice/tiles/Sou9.svg
+  s_6536e283417a11::t_a0b5fd2a6cc277 1-748
+score-practice/tiles/Sou2.svg
+  s_6536e283417a11::t_a0b5fd2a6cc277 1-372
+score-practice/tiles/Man9.svg
+  s_6536e283417a11::t_a0b5fd2a6cc277 1-292
+wind/README.md
+  s_6536e283417a11::t_1f1e3b8e3b6216 65,68,71
+score-practice/tiles/Hatsu.svg
+  s_6536e283417a11::t_a0b5fd2a6cc277 1-309
+score-practice/tiles/Nan.svg
+  s_6536e283417a11::t_a0b5fd2a6cc277 1-270
+score-practice/tiles/Sou5.svg
+  s_6536e283417a11::t_a0b5fd2a6cc277 1-608
+score-practice/tiles/Man6.svg
+  s_6536e283417a11::t_a0b5fd2a6cc277 1-297
+score-practice/tiles/Sou5-Dora.svg
+  s_6536e283417a11::t_a0b5fd2a6cc277 1-614
+score-practice/tiles/Shaa.svg
+  s_6536e283417a11::t_a0b5fd2a6cc277 1-248
+score-practice/tiles/Sou3.svg
+  s_6536e283417a11::t_a0b5fd2a6cc277 1-462
+score-practice/tiles/Pin5-Dora.svg
+  s_6536e283417a11::t_a0b5fd2a6cc277 1-460
+score-practice/tiles/Pin5.svg
+  s_6536e283417a11::t_a0b5fd2a6cc277 1-454
+score-practice/tiles/Man4.svg
+  s_6536e283417a11::t_a0b5fd2a6cc277 1-292
+score-practice/tiles/Man3.svg
+  s_6536e283417a11::t_a0b5fd2a6cc277 1-292
+score-practice/tiles/Man1.svg
+  s_6536e283417a11::t_a0b5fd2a6cc277 1-276
+score-practice/tiles/Man5.svg
+  s_6536e283417a11::t_a0b5fd2a6cc277 1-313
+score-practice/tiles/Back.svg
+  s_6536e283417a11::t_a0b5fd2a6cc277 1-281
+score-practice/tiles/Man5-Dora.svg
+  s_6536e283417a11::t_a0b5fd2a6cc277 1-319
+score-practice/tiles/Man7.svg
+  s_6536e283417a11::t_a0b5fd2a6cc277 1-283
+score-practice/tiles/Pin4.svg
+  s_6536e283417a11::t_a0b5fd2a6cc277 1-407
+score-practice/tiles/Man2.svg
+  s_6536e283417a11::t_a0b5fd2a6cc277 1-286
+score-practice/tiles/Sou1.svg
+  s_6536e283417a11::t_a0b5fd2a6cc277 1-764
+score-practice/tiles/Sou8.svg
+  s_6536e283417a11::t_a0b5fd2a6cc277 1-712
+score-practice/tiles/Pin3.svg
+  s_6536e283417a11::t_a0b5fd2a6cc277 1-362
+score-practice/tiles/LICENSE.md
+  s_6536e283417a11::t_1e15b77a34c6d5 1-5
+score-practice/tiles/Haku.svg
+  s_6536e283417a11::t_a0b5fd2a6cc277 1-214
+score-practice/app.js
+  s_6536e283417a11::t_1e47f4d738026c 1382
+  s_6536e283417a11::t_cd326bd8d1bd77 1371-1379,1381
+  s_6536e283417a11::t_93d040a7ee2b85 414-433,436-437,440,442,445
+  s_6536e283417a11::t_c8d564c9d52455 1394
+  s_6536e283417a11::t_9ce9b98bb3354d 1396,1399
+score-practice/tiles/Pin1.svg
+  s_6536e283417a11::t_a0b5fd2a6cc277 1-544
+score-practice/tiles/Pin8.svg
+  s_6536e283417a11::t_a0b5fd2a6cc277 1-570
+score-practice/tiles/Pin9.svg
+  s_6536e283417a11::t_a0b5fd2a6cc277 1-623
+score-practice/tiles/Pin6.svg
+  s_6536e283417a11::t_a0b5fd2a6cc277 1-477
+score-practice/tiles/Sou6.svg
+  s_6536e283417a11::t_a0b5fd2a6cc277 1-688
+score-practice/server/index.js
+  s_6536e283417a11::t_9adfa38621aef7 16-19,43-44
+score-practice/tiles/Sou7.svg
+  s_6536e283417a11::t_a0b5fd2a6cc277 1-628
+score-practice/tiles/Man8.svg
+  s_6536e283417a11::t_a0b5fd2a6cc277 1-286
+score-practice/tiles/Ton.svg
+  s_6536e283417a11::t_a0b5fd2a6cc277 1-242
+score-practice/style.css
+  s_6536e283417a11::t_7e6e63507fbd69 284-287,293-309,314-317
+  s_6536e283417a11::t_6868ebd6528689 313
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.45-trip",
+  "base_commit_sha": "8a5a0844811c9aa83adae56fb69e5da6c32bdd69",
+  "prompts": {},
+  "humans": {
+    "h_fa183bc1ee823a": {
+      "author": "gulingjun <gulingjun@trip.com>"
+    }
+  },
+  "sessions": {
+    "s_6536e283417a11": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "74f447d3-8671-46c9-b564-d0bee4a54fc1",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "gulingjun <gulingjun@trip.com>"
+    }
+  }
+}
