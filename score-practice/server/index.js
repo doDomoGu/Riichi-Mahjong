@@ -13,6 +13,10 @@ const staticFiles = {
   '/app.js': ['app.js', 'text/javascript; charset=utf-8'],
 };
 
+// tiles/ 下是牌面 SVG 图片，文件名固定为字母数字组合（如 Man5-Dora.svg），
+// 用白名单正则校验，避免把任意路径拼进 fs.readFile。
+const TILE_IMAGE_PATTERN = /^\/tiles\/[A-Za-z0-9-]+\.svg$/;
+
 function sendFile(res, relativePath, contentType) {
   fs.readFile(path.join(ROOT, relativePath), (error, content) => {
     if (error) {
@@ -33,6 +37,11 @@ const server = http.createServer((req, res) => {
   const file = staticFiles[url.pathname];
   if (req.method === 'GET' && file) {
     sendFile(res, file[0], file[1]);
+    return;
+  }
+
+  if (req.method === 'GET' && TILE_IMAGE_PATTERN.test(url.pathname)) {
+    sendFile(res, url.pathname.slice(1), 'image/svg+xml');
     return;
   }
 

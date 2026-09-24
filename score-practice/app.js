@@ -411,24 +411,39 @@ function buildFactsFromTemplate(template, details, dealer, winType, honba) {
   };
 }
 
-function formatTile(tile) {
-  const match = tile.match(/^([1-9]+)([mpsz])$/);
-  if (!match) return tile;
-  if (match[2] !== 'z') return `${match[1]}${suitNames[match[2]]}`;
-  return [...match[1]].map((value) => honorNames[value]).join('');
+// suit(m/p/s) + 数字 -> tiles/ 目录下的 SVG 文件名（不含扩展名）
+const suitFileNames = { m: 'Man', p: 'Pin', s: 'Sou' };
+// 字牌编号顺序对应 tiles/ 目录里的文件名（东南西北中发白）
+const honorFileNames = { 1: 'Ton', 2: 'Nan', 3: 'Shaa', 4: 'Pei', 5: 'Haku', 6: 'Hatsu', 7: 'Chun' };
+
+// 单张牌 -> 牌面图片文件名。isRed 为真且是 5 时用红宝牌图（Man5-Dora 等）。
+function tileImageName(value, suit, isRed) {
+  if (suit === 'z') return honorFileNames[value];
+  if (value === '5' && isRed) return `${suitFileNames[suit]}5-Dora`;
+  return `${suitFileNames[suit]}${value}`;
 }
 
+// 单张牌（形如 '4s' 或 '6z'）渲染成一张牌面图片。
+function renderTileImage(tile, isRed = false) {
+  const match = tile.match(/^([1-9])([mpsz])$/);
+  if (!match) return `<span class="tile-img-fallback">${tile}</span>`;
+  const [, value, suit] = match;
+  const name = tileImageName(value, suit, isRed);
+  const label = suit === 'z' ? honorNames[value] : `${value}${suitNames[suit]}`;
+  return `<img class="tile-img" src="tiles/${name}.svg" alt="${label}" width="45" height="60">`;
+}
+
+// 一组牌（形如 '456s'，多张同花色）渲染成一排牌面图片。
+// redState 记录还剩几张红五可用，按牌面出现顺序消耗，与原逻辑一致。
 function formatTileGroup(tile, redState) {
   const match = tile.match(/^([1-9]+)([mpsz])$/);
-  if (!match) return tile;
+  if (!match) return renderTileImage(tile);
   const [digits, suit] = [match[1], match[2]];
-  const values = [...digits].map((value) => {
+  return [...digits].map((value) => {
     const isRed = value === '5' && suit !== 'z' && redState.remaining > 0;
     if (isRed) redState.remaining -= 1;
-    return isRed ? `<span class="red-tile">${value}</span>` : value;
+    return renderTileImage(`${value}${suit}`, isRed);
   }).join('');
-  if (suit === 'z') return [...digits].map((value) => honorNames[value]).join('');
-  return `${values}${suitNames[suit]}`;
 }
 
 function meldTiles(meld) {
@@ -1353,9 +1368,18 @@ function renderQuestion() {
     return true;
   });
 
+  // 手牌展示：不按“面子+雀头”摆放，按牌本身排序——
+  // 万子 -> 筒子 -> 条子 -> 字牌，同花色内数字从小到大。
+  const suitOrder = { m: 0, p: 1, s: 2, z: 3 };
+  const sortedTiles13 = [...tiles13].sort((a, b) => {
+    const suitDiff = suitOrder[a.slice(-1)] - suitOrder[b.slice(-1)];
+    if (suitDiff !== 0) return suitDiff;
+    return Number(a.slice(0, -1)) - Number(b.slice(0, -1));
+  });
+
   $('#hand-label').textContent = '手牌';
-  $('#hand-groups').innerHTML = tiles13
-    .map((t) => `<span>${formatTileGroup(t, redState)}</span>`)
+  $('#hand-groups').innerHTML = sortedTiles13
+    .map((t) => formatTileGroup(t, redState))
     .join('');
   $('#riichi-status').textContent = q.riichi ? '已立直' : '未立直';
   $('#ippatsu-status-item').hidden = !q.ippatsu;
@@ -1367,14 +1391,12 @@ function renderQuestion() {
   $('#concealed-kan-list').innerHTML = concealedKansCodes
     .map((kanCode) => `<span>暗杠 ${formatKan(kanCode, redState)}</span>`).join('');
   $('#win-tile').innerHTML = formatTileGroup(q.winTile, redState);
-  $('#dora-label').textContent = `宝牌指示牌（${q.doraIndicators.length} 张${
-    q.kanCount ? `，${q.kanCount} 次开杠` : ''
-  }）`;
+  $('#dora-label').textContent = '宝牌指示牌';
   $('#dora-indicators').innerHTML = q.doraIndicators
-    .map((indicator) => `<span>${formatTile(indicator)}</span>`).join('');
+    .map((indicator) => renderTileImage(indicator)).join('');
   $('#ura-dora-row').hidden = !q.riichi;
   $('#ura-dora-indicators').innerHTML = q.uraDoraIndicators
-    .map((indicator) => `<span>${formatTile(indicator)}</span>`).join('');
+    .map((indicator) => renderTileImage(indicator)).join('');
   renderYakuOptions(q);
   $('#fu-details').innerHTML = '';
   $('#fu-details').hidden = true;

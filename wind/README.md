@@ -62,10 +62,10 @@ npm run dev
 - http://dodomogu.com/mahjong/wind/
 - 前端 base / API / Socket 见 `client/.env.production`
 
-本机执行（需能 SSH 登录那台机器）：
+wind 模块跟随仓库根目录统一部署，不再单独部署。在**仓库根目录**执行：
 
 ```bash
-./deploy.sh root@你的公网IP
+./deploy.sh
 ```
 
-默认装到 `/opt/mahjong-wind`，Node 监听 **3010**，由 nginx 把 `/wind/` 反代过去。再次执行会更新代码，**不会覆盖** 服务器上已有的 `data/store.json`。
+默认装到 `/opt/riichi-mahjong/wind`，Node 监听 **3001**，由仓库级网关（`server/`）转发 `/wind/` 请求过去，再由 nginx 反代到网关。具体流程见仓库根目录的 [README.md](../README.md)。再次执行会更新代码，**不会覆盖** 服务器上已有的 `data/store.json`。
